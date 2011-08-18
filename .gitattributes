@@ -202,6 +202,19 @@ misc/init.d/freebsd/zabbix_server -text
 misc/init.d/tru64/zabbix_server -text
 misc/init.d/ubuntu/zabbix-agent.conf -text
 misc/init.d/ubuntu/zabbix-server.conf -text
+rpm/README -text
+rpm/SOURCES/zabbix-1.8.4-config.patch -text
+rpm/SOURCES/zabbix-1.8.4-fonts-config.patch -text
+rpm/SOURCES/zabbix-agent.init -text
+rpm/SOURCES/zabbix-logrotate.in -text
+rpm/SOURCES/zabbix-proxy.init -text
+rpm/SOURCES/zabbix-server.init -text
+rpm/SOURCES/zabbix-web.conf -text
+rpm/SOURCES/zabbix_snmptrap -text
+rpm/SOURCES/zabbix_snmptrap.README -text
+rpm/SOURCES/zabbix_snmptrap.conf -text
+rpm/build.sh -text
+rpm/zabbix.spec.tmpl -text
 src/libs/zbxself/Makefile.am -text
 src/zabbix_server/selfmon/Makefile.am -text
 upgrades/dbpatches/1.1/1.0_to_1.1alpha1/mysql/Hub.png -text svneol=unset#image/png
