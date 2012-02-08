@@ -331,9 +331,9 @@ misc/init.d/aix/zabbix_agentd svneol=native#text/x-sh
 misc/init.d/fedora/core5/zabbix_agentd -text
 misc/init.d/freebsd/zabbix_agentd -text
 misc/init.d/freebsd/zabbix_server -text
-misc/init.d/redhat/rhel/zabbix-agent.init -text
-misc/init.d/redhat/rhel/zabbix-proxy.init -text
-misc/init.d/redhat/rhel/zabbix-server.init -text
+misc/init.d/redhat/rhel/zabbix-agent -text
+misc/init.d/redhat/rhel/zabbix-proxy -text
+misc/init.d/redhat/rhel/zabbix-server -text
 misc/init.d/tru64/zabbix_server -text
 misc/init.d/ubuntu/zabbix-agent.conf -text
 misc/init.d/ubuntu/zabbix-server.conf -text
