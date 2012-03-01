@@ -14,7 +14,6 @@ build/win32/project/Makefile_get -text
 build/win32/project/Makefile_get_x64 -text
 build/win32/project/Makefile_sender -text
 build/win32/project/Makefile_sender_x64 -text
-/build_deb.sh -text
 create/data/create_data_sql/create_data_sql.sh svneol=native#text/x-sh
 create/data/create_data_sql/data_sql_blacklist.txt svneol=native#text/plain
 create/data/create_data_sql/data_sql_filter.txt svneol=native#text/plain
@@ -197,20 +196,11 @@ man/zabbix_proxy.man -text
 man/zabbix_sender.man -text
 man/zabbix_server.man -text
 misc/clock/clock.fla -text
-misc/distro/debian/NEWS.Debian -text
-misc/distro/debian/TODO.Debian -text
 misc/distro/debian/changelog -text
 misc/distro/debian/compat -text
 misc/distro/debian/conf/apache.conf -text
 misc/distro/debian/control -text
 misc/distro/debian/copyright -text
-misc/distro/debian/manpages/zabbix_agentd.8 -text
-misc/distro/debian/manpages/zabbix_get.1 -text
-misc/distro/debian/manpages/zabbix_sender.1 -text
-misc/distro/debian/manpages/zabbix_server.8 -text
-misc/distro/debian/patches/binutils-gold -text
-misc/distro/debian/patches/no-swf-clock -text
-misc/distro/debian/patches/nocrypto -text
 misc/distro/debian/patches/series -text
 misc/distro/debian/patches/sql-transaction -text
 misc/distro/debian/po/POTFILES.in -text
@@ -234,7 +224,6 @@ misc/distro/debian/po/templates.pot -text
 misc/distro/debian/rules -text
 misc/distro/debian/source/format -text
 misc/distro/debian/source/options -text
-misc/distro/debian/templates/dbconfig.php.in -text
 misc/distro/debian/templates/zabbix_agentd.conf.in -text
 misc/distro/debian/templates/zabbix_proxy.conf.in -text
 misc/distro/debian/templates/zabbix_proxy_sqlite3.conf.in -text
