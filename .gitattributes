@@ -250,6 +250,7 @@ misc/distro/debian/zabbix-frontend-php.postrm -text
 misc/distro/debian/zabbix-frontend-php.templates -text
 misc/distro/debian/zabbix-proxy-mysql.config -text
 misc/distro/debian/zabbix-proxy-mysql.dirs -text
+misc/distro/debian/zabbix-proxy-mysql.examples -text
 misc/distro/debian/zabbix-proxy-mysql.install -text
 misc/distro/debian/zabbix-proxy-mysql.logrotate -text
 misc/distro/debian/zabbix-proxy-mysql.manpages -text
@@ -259,6 +260,7 @@ misc/distro/debian/zabbix-proxy-mysql.prerm -text
 misc/distro/debian/zabbix-proxy-mysql.zabbix-proxy.init -text
 misc/distro/debian/zabbix-proxy-pgsql.config -text
 misc/distro/debian/zabbix-proxy-pgsql.dirs -text
+misc/distro/debian/zabbix-proxy-pgsql.examples -text
 misc/distro/debian/zabbix-proxy-pgsql.install -text
 misc/distro/debian/zabbix-proxy-pgsql.logrotate -text
 misc/distro/debian/zabbix-proxy-pgsql.manpages -text
