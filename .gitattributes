@@ -248,6 +248,8 @@ misc/distro/debian/zabbix-frontend-php.links -text
 misc/distro/debian/zabbix-frontend-php.postinst -text
 misc/distro/debian/zabbix-frontend-php.postrm -text
 misc/distro/debian/zabbix-frontend-php.templates -text
+misc/distro/debian/zabbix-get.dirs -text
+misc/distro/debian/zabbix-get.install -text
 misc/distro/debian/zabbix-proxy-mysql.config -text
 misc/distro/debian/zabbix-proxy-mysql.dirs -text
 misc/distro/debian/zabbix-proxy-mysql.examples -text
@@ -277,6 +279,8 @@ misc/distro/debian/zabbix-proxy-sqlite3.postinst -text
 misc/distro/debian/zabbix-proxy-sqlite3.postrm -text
 misc/distro/debian/zabbix-proxy-sqlite3.prerm -text
 misc/distro/debian/zabbix-proxy-sqlite3.zabbix-proxy.init -text
+misc/distro/debian/zabbix-sender.dirs -text
+misc/distro/debian/zabbix-sender.install -text
 misc/distro/debian/zabbix-server-mysql.README.Debian -text
 misc/distro/debian/zabbix-server-mysql.config -text
 misc/distro/debian/zabbix-server-mysql.dirs -text
