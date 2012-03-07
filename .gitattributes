@@ -224,15 +224,11 @@ misc/distro/debian/po/templates.pot -text
 misc/distro/debian/rules -text
 misc/distro/debian/source/format -text
 misc/distro/debian/source/options -text
-misc/distro/debian/templates/zabbix_agentd.conf.in -text
-misc/distro/debian/templates/zabbix_proxy.conf.in -text
-misc/distro/debian/templates/zabbix_proxy_sqlite3.conf.in -text
-misc/distro/debian/templates/zabbix_server.conf.in -text
-misc/distro/debian/templates/zabbix_server_sqlite3.conf.in -text
 misc/distro/debian/watch -text
 misc/distro/debian/zabbix-agent.README.Debian -text
 misc/distro/debian/zabbix-agent.config -text
 misc/distro/debian/zabbix-agent.dirs -text
+misc/distro/debian/zabbix-agent.examples -text
 misc/distro/debian/zabbix-agent.init -text
 misc/distro/debian/zabbix-agent.install -text
 misc/distro/debian/zabbix-agent.logrotate -text
