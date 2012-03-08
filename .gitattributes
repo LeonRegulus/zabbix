@@ -201,6 +201,7 @@ misc/distro/debian/compat -text
 misc/distro/debian/conf/apache.conf -text
 misc/distro/debian/control -text
 misc/distro/debian/copyright -text
+misc/distro/debian/patches/font-config -text
 misc/distro/debian/patches/series -text
 misc/distro/debian/patches/sql-transaction -text
 misc/distro/debian/po/POTFILES.in -text
@@ -243,6 +244,7 @@ misc/distro/debian/zabbix-frontend-php.install -text
 misc/distro/debian/zabbix-frontend-php.links -text
 misc/distro/debian/zabbix-frontend-php.postinst -text
 misc/distro/debian/zabbix-frontend-php.postrm -text
+misc/distro/debian/zabbix-frontend-php.prerm -text
 misc/distro/debian/zabbix-frontend-php.templates -text
 misc/distro/debian/zabbix-get.dirs -text
 misc/distro/debian/zabbix-get.install -text
