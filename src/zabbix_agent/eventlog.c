@@ -949,7 +949,6 @@ static int	seek_eventlog(HANDLE *eventlog_handle, zbx_uint64_t FirstID, DWORD Re
 		DWORD *error_code, char **error)
 {
 	const char	*__function_name="seek_eventlog";
-	BYTE		*pEndOfRecords, *pELR;
 	DWORD		dwRecordNumber, required_buf_size;
 	zbx_uint64_t	skip_count = 0;
 
@@ -1005,6 +1004,8 @@ static int	seek_eventlog(HANDLE *eventlog_handle, zbx_uint64_t FirstID, DWORD Re
 
 	while (0 < skip_count && ERROR_SUCCESS == *error_code && EVENTLOG_BACKWARDS_READ == ReadDirection)
 	{
+		BYTE	*pEndOfRecords, *pELR;
+
 		if (!ReadEventLog(eventlog_handle, EVENTLOG_SEQUENTIAL_READ | ReadDirection, 0, *pELRs, *buffer_size,
 				num_bytes_read, &required_buf_size))
 		{
