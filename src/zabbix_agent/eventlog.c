@@ -1195,7 +1195,7 @@ int	process_eventslog(const char *server, unsigned short port, const char *event
 	zbx_uint64_t	FirstID, LastID, lastlogsize;
 	int		buffer_size = 64 * ZBX_KIBIBYTE;
 	DWORD		num_bytes_read = 0, required_buf_size, ReadDirection, error_code;
-	BYTE		*pELR, *pEndOfRecords, *pELRs = NULL;
+	BYTE		*pELRs = NULL;
 	int		s_count, p_count, send_err = SUCCEED;
 	unsigned long	logeventid, timestamp = 0;
 	unsigned short	severity;
@@ -1286,6 +1286,8 @@ int	process_eventslog(const char *server, unsigned short port, const char *event
 	/* is not big enough to hold a complete event record, reallocate the buffer. */
 	while (ERROR_SUCCESS == error_code)
 	{
+		BYTE	*pELR, *pEndOfRecords;
+
 		if (0 == num_bytes_read && 0 == ReadEventLog(eventlog_handle,
 				EVENTLOG_SEQUENTIAL_READ | EVENTLOG_FORWARDS_READ, 0,
 				pELRs, buffer_size, &num_bytes_read, &required_buf_size))
@@ -1297,7 +1299,8 @@ int	process_eventslog(const char *server, unsigned short port, const char *event
 				pELRs = (BYTE *)zbx_realloc((void *)pELRs, buffer_size);
 				continue;
 			}
-			else if (ERROR_HANDLE_EOF == error_code)
+
+			if (ERROR_HANDLE_EOF == error_code)
 				break;
 
 			*error = zbx_dsprintf(*error, "Cannot read eventlog '%s': %s.", eventlog_name,
