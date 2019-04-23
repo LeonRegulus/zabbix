@@ -925,7 +925,7 @@ int	finalize_eventlog6(EVT_HANDLE *render_context, EVT_HANDLE *query)
  *                                                                            *
  * Function: seek_eventlog                                                    *
  *                                                                            *
- * Purpose: the first pointer offset for read Event Log file                  *
+ * Purpose: try to set reading position in event log                          *
  *                                                                            *
  * Parameters: eventlog_handle - [IN] the handle to the event log to be read  *
  *             FirstID         - [IN] the first Event log record to be parse  *
@@ -989,7 +989,7 @@ static int	seek_eventlog(HANDLE *eventlog_handle, zbx_uint64_t FirstID, DWORD Re
 		return FAIL;
 	}
 
-	/* Fallback implementation of the first seek for read pointer of EventLog. */
+	/* fallback implementation to deal with Error 87 when reading backwards */
 	if (ERROR_INVALID_PARAMETER == *error_code && EVENTLOG_BACKWARDS_READ == ReadDirection)
 	{
 		if (LastID == FirstID)
@@ -1015,7 +1015,8 @@ static int	seek_eventlog(HANDLE *eventlog_handle, zbx_uint64_t FirstID, DWORD Re
 				*pELRs = (BYTE *)zbx_realloc((void *)*pELRs, *buffer_size);
 				continue;
 			}
-			else if (ERROR_HANDLE_EOF != *error_code)
+
+			if (ERROR_HANDLE_EOF != *error_code)
 				break;
 
 			*error = zbx_dsprintf(*error, "Cannot read eventlog '%s': %s.", eventlog_name,
