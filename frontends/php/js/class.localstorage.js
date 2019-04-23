@@ -85,7 +85,8 @@ function ZBX_LocalStorage(version, prefix) {
 	this.keys_to_backup = {
 		'notifications.alarm.end': true,
 		'notifications.alarm.snoozed': true,
-		'notifications.snoozedids': true
+		'notifications.snoozedids': true,
+		'notifications.list': true
 	}
 
 	if (this.readKey('version') != this.keys.version) {

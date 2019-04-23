@@ -45,15 +45,6 @@ function ZBX_Notifications(store, tab) {
 
 	this.do_poll_server = false;
 
-	/**
-	 * We must not rely on notifications list from store if this is first created instance across tabs.
-	 * So we truncate that list. The polling will begin as usual.
-	 */
-	if (tab.isSingleSession()) {
-		this.store.resetKey('notifications.listid');
-		this.store.resetKey('notifications.list');
-	}
-
 	this.dom.btn_close.onclick = this.btnCloseClicked.bind(this);
 	this.dom.btn_snooze.onclick = this.btnSnoozeClicked.bind(this);
 	this.dom.btn_mute.onclick = this.btnMuteClicked.bind(this);
@@ -151,7 +142,7 @@ ZBX_Notifications.prototype.onPollerReceive = function(resp) {
 	}
 
 	this.store.writeKey('notifications.listid', resp.listid);
-	this.applySnoozeProp(resp.notifications);
+	var all_snoozed = this.applySnoozeProp(resp.notifications);
 
 	var list_obj = ZBX_Notifications.toStorableList(resp.notifications),
 		notifid = ZBX_Notifications.findNotificationToPlay(resp.notifications);
@@ -161,8 +152,9 @@ ZBX_Notifications.prototype.onPollerReceive = function(resp) {
 	this.store.writeKey('notifications.list', list_obj);
 	this.onNotificationsList(list_obj);
 
-	this.store.writeKey('notifications.alarm.snoozed', false);
-	this.onSnoozeChange(false);
+	this.store.writeKey('notifications.alarm.snoozed', all_snoozed);
+
+	this.onSnoozeChange(all_snoozed);
 };
 
 /**
@@ -227,7 +219,7 @@ ZBX_Notifications.prototype.onSnoozeChange = function(bool) {
 	}
 
 	var list_obj = this.store.readKey('notifications.list'),
-		snoozedids = this.store.readKey('notifications.snoozedids'),
+		snoozedids = {},
 		id;
 
 	for (id  in list_obj) {
@@ -369,13 +361,16 @@ ZBX_Notifications.prototype.writeSettings = function(settings) {
  * Mutates list objects by setting an additional 'snoozed' property.
  *
  * @param {array} list  List of notifications received from server.
+ *
+ * @return {bool}  True in every notification in list matched with snoozed notifications.
  */
 ZBX_Notifications.prototype.applySnoozeProp = function(list) {
 	if (!(list instanceof Array)) {
 		throw 'Expected array';
 	}
 
-	var snoozes = this.store.readKey('notifications.snoozedids');
+	var snoozes = this.store.readKey('notifications.snoozedids'),
+		is_all_snoozed = true;
 
 	list.forEach(function(raw_notif) {
 		if (snoozes[raw_notif.uid]) {
@@ -383,8 +378,11 @@ ZBX_Notifications.prototype.applySnoozeProp = function(list) {
 		}
 		else {
 			raw_notif.snoozed = false;
+			is_all_snoozed = false;
 		}
 	});
+
+	return is_all_snoozed;
 };
 
 /**
