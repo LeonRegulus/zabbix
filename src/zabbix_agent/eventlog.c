@@ -1015,8 +1015,8 @@ static int	seek_eventlog(HANDLE *eventlog_handle, zbx_uint64_t FirstID, DWORD Re
 	{
 		BYTE	*pEndOfRecords, *pELR;
 
-		if (!ReadEventLog(eventlog_handle, EVENTLOG_SEQUENTIAL_READ | ReadDirection, 0, *pELRs, *buffer_size,
-				num_bytes_read, &required_buf_size))
+		if (0 == ReadEventLog(eventlog_handle, EVENTLOG_SEQUENTIAL_READ | ReadDirection, 0, *pELRs,
+				*buffer_size, num_bytes_read, &required_buf_size))
 		{
 			if (ERROR_INSUFFICIENT_BUFFER == (*error_code = GetLastError()))
 			{
