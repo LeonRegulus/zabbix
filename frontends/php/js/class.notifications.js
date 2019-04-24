@@ -32,6 +32,7 @@ function ZBX_Notifications(store, tab) {
 		throw 'Unmatched signature!';
 	}
 
+	this.disabled = false;
 	this.player = new ZBX_NotificationsAudio();
 
 	this.store = store;
@@ -118,6 +119,11 @@ ZBX_Notifications.prototype.onStoreUpdate = function(key, value) {
 		case 'tabs.lastfocused':
 			this.onTabFocusChanged(value);
 			break;
+		case 'notifications.disabled':
+			this.disabled = value;
+			value && this.onNotificationsList({});
+			value && this.player.stop();
+			break;
 		case 'notifications.poll_interval':
 			this.poll_interval = value;
 			this.restartMainLoop();
@@ -134,6 +140,20 @@ ZBX_Notifications.prototype.onPollerReceive = function(resp) {
 	if (resp.error) {
 		clearInterval(this.main_loop_id);
 		return this.store.truncate();
+	}
+
+	this.disabled = !resp.settings.enabled;
+	this.store.writeKey('notifications.disabled', this.disabled);
+
+	if (this.disabled) {
+		this.player.stop();
+		this.onNotificationsList({});
+		this.store.truncateBackup();
+		this.store.truncate(function(key_variants) {
+			return !! key_variants.key.match('^notifications\\.');
+		});
+
+		return;
 	}
 
 	this.writeSettings(resp.settings);
@@ -249,7 +269,7 @@ ZBX_Notifications.prototype.onMuteChange = function(bool) {
  * @param {ZBX_BrowserTab} tab.
  */
 ZBX_Notifications.prototype.onTabUnload = function(tab) {
-	if (this.do_poll_server) {
+	if (this.do_poll_server && !this.disabled) {
 		this.store.writeKey('notifications.alarm.seek', this.player.getSeek());
 		this.store.writeKey('notifications.alarm.timeout', this.player.getTimeout());
 	}
@@ -266,6 +286,10 @@ ZBX_Notifications.prototype.onTabUnload = function(tab) {
  * @param {string} tabid.
  */
 ZBX_Notifications.prototype.onTabFocusChanged = function(tabid) {
+	if (this.disabled) {
+		return;
+	}
+
 	var active_blured = (this.do_poll_server && this.tab.uid != tabid);
 
 	if (active_blured) {
@@ -337,6 +361,7 @@ ZBX_Notifications.prototype.writeAlarm = function(notif, opts) {
  * @param {object} settings  Settings object received from server.
  */
 ZBX_Notifications.prototype.writeSettings = function(settings) {
+	this.store.writeKey('notifications.disabled', !settings.enabled);
 	this.store.writeKey('notifications.alarm.muted', settings.muted);
 
 	var min_timeout = Math.floor(settings.msg_timeout / 2);

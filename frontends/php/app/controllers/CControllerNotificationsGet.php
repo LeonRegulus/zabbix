@@ -31,13 +31,13 @@ class CControllerNotificationsGet extends CController {
 
 	protected function doAction() {
 		$msgsettings = getMessageSettings();
-
 		$triggerLimit = 15;
 
 		$result = [
 			'notifications' => [],
 			'listid' => '',
 			'settings' => [
+				'enabled' => (bool) $msgsettings['enabled'],
 				'alarm_timeout' => intval($msgsettings['sounds.repeat']),
 				'msg_timeout' => intval($msgsettings['timeout']),
 				'muted' => (bool) $msgsettings['sounds.mute'],

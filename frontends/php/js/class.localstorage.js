@@ -75,7 +75,9 @@ function ZBX_LocalStorage(version, prefix) {
 		// Notification end ID is written when notification has completed it's audio playback.
 		'notifications.alarm.end': '',
 		// Poll interval will be reduced, if there is possibility for user to miss new notifications.
-		'notifications.poll_interval': 0
+		'notifications.poll_interval': 0,
+		// Disabled setting tells notifier objects to stop audio, hide notifications and to stop following active tab.
+		'notifications.disabled': false
 	}
 
 	/**
@@ -86,7 +88,8 @@ function ZBX_LocalStorage(version, prefix) {
 		'notifications.alarm.end': true,
 		'notifications.alarm.snoozed': true,
 		'notifications.snoozedids': true,
-		'notifications.list': true
+		'notifications.list': true,
+		'notifications.disabled': true
 	}
 
 	if (this.readKey('version') != this.keys.version) {
@@ -342,10 +345,16 @@ ZBX_LocalStorage.prototype.truncateBackup = function() {
 /**
  * Removes all local storage and creates default objects. Backup keys are not removed.
  *
- * @param {string} value
+ * @param {callable?} filter_cb  Optional callback which return true if key should be removed.
  */
-ZBX_LocalStorage.prototype.truncate = function() {
-	this.iterator().forEach(function(key_variants) {
+ZBX_LocalStorage.prototype.truncate = function(filter_cb) {
+	var iter = this.iterator();
+
+	if (filter_cb && filter_cb.constructor === Function) {
+		iter = iter.filter(filter_cb);
+	}
+
+	iter.forEach(function(key_variants) {
 		localStorage.removeItem(key_variants.abs_key);
 	});
 };
