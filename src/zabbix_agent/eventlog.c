@@ -492,7 +492,7 @@ static char	*expand_message6(const wchar_t *pname, EVT_HANDLE event)
 	{
 		tmp_pname = zbx_unicode_to_utf8(pname);
 		zabbix_log(LOG_LEVEL_DEBUG, "provider '%s' could not be opened: %s",
-				strerror_from_system(GetLastError()), tmp_pname);
+				tmp_pname, strerror_from_system(GetLastError()));
 		zbx_free(tmp_pname);
 		goto out;
 	}
