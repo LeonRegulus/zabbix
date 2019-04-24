@@ -1197,7 +1197,7 @@ int	process_eventslog(const char *server, unsigned short port, const char *event
 		int rate, zbx_process_value_t process_value_cb, ZBX_ACTIVE_METRIC *metric,
 		zbx_uint64_t *lastlogsize_sent, char **error)
 {
-	const char	*str_severity, *__function_name = "process_eventslog";
+	const char	*__function_name = "process_eventslog";
 	int		ret = FAIL;
 	HANDLE		eventlog_handle = NULL;
 	wchar_t 	*eventlog_name_w;
@@ -1206,9 +1206,8 @@ int	process_eventslog(const char *server, unsigned short port, const char *event
 	DWORD		num_bytes_read = 0, required_buf_size, ReadDirection, error_code;
 	BYTE		*pELRs = NULL;
 	int		s_count, p_count, send_err = SUCCEED;
-	unsigned long	logeventid, timestamp = 0;
-	unsigned short	severity;
-	char		*source, *value, str_logeventid[8];
+	unsigned long	timestamp = 0;
+	char		*source;
 
 	lastlogsize = metric->lastlogsize;
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s() source:'%s' lastlogsize:" ZBX_FS_UI64, __function_name, eventlog_name,
@@ -1332,6 +1331,11 @@ int	process_eventslog(const char *server, unsigned short port, const char *event
 			/* we look for using '=' */
 			if (0 != timestamp || (DWORD)FirstID == ((PEVENTLOGRECORD)pELR)->RecordNumber)
 			{
+				const char	*str_severity;
+				unsigned short	severity;
+				unsigned long	logeventid;
+				char		*value, str_logeventid[8];
+
 				/* increase counter only for records >= FirstID (start point for the search) */
 				/* to avoid wrap-around of the 32b RecordNumber we increase the 64b lastlogsize */
 				if (0 == timestamp)
