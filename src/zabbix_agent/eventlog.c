@@ -988,8 +988,16 @@ static int	seek_eventlog(HANDLE *eventlog_handle, zbx_uint64_t FirstID, DWORD Re
 		return FAIL;
 	}
 
+	if (EVENTLOG_FORWARDS_READ == ReadDirection)
+	{
+		/* Error 87 when reading forwards is handled outside this function */
+		*error_code = ERROR_SUCCESS;
+		return SUCCEED;
+	}
+
 	/* fallback implementation to deal with Error 87 when reading backwards */
-	if (ERROR_INVALID_PARAMETER == *error_code && EVENTLOG_BACKWARDS_READ == ReadDirection)
+
+	if (ERROR_INVALID_PARAMETER == *error_code)
 	{
 		if (LastID == FirstID)
 			skip_count = 1;
@@ -1002,7 +1010,7 @@ static int	seek_eventlog(HANDLE *eventlog_handle, zbx_uint64_t FirstID, DWORD Re
 
 	*error_code = ERROR_SUCCESS;
 
-	while (0 < skip_count && ERROR_SUCCESS == *error_code && EVENTLOG_BACKWARDS_READ == ReadDirection)
+	while (0 < skip_count && ERROR_SUCCESS == *error_code)
 	{
 		BYTE	*pEndOfRecords, *pELR;
 
@@ -1038,7 +1046,7 @@ static int	seek_eventlog(HANDLE *eventlog_handle, zbx_uint64_t FirstID, DWORD Re
 		}
 	}
 
-	if (EVENTLOG_BACKWARDS_READ == ReadDirection && ERROR_HANDLE_EOF == *error_code)
+	if (ERROR_HANDLE_EOF == *error_code)
 		*error_code = ERROR_SUCCESS;
 
 	return SUCCEED;
