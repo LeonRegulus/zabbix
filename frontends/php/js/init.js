@@ -53,7 +53,6 @@ window.ZABBIX = Object.create({
 });
 
 jQuery(function($) {
-
 	if ($('#search').length) {
 		createSuggest('search');
 	}
@@ -137,7 +136,7 @@ jQuery(function($) {
 		return false;
 	});
 
-	/*
+	/**
 	 * add.popup event
 	 *
 	 * Call multiselect method 'addData' if parent was multiselect, execute addPopupValues function

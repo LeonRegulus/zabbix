@@ -347,7 +347,7 @@ if ($this->data['is_profile']) {
 				(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
 				(new CButton('start', _('Play')))
 					->addClass(ZBX_STYLE_BTN_GREY)
-					->onClick( "javascript: testUserSound('messages_sounds.".$severity."');"),
+					->onClick("javascript: testUserSound('messages_sounds.".$severity."');"),
 				(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
 				(new CButton('stop', _('Stop')))
 					->addClass(ZBX_STYLE_BTN_GREY)

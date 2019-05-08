@@ -74,8 +74,8 @@ ZBX_NotificationsAudio.prototype.listen = function() {
 };
 
 /**
- * File is applied only if it is different than on instate, so this method may be called repeatedly,
- * and will not interrupt playback.
+ * File is applied only if it is different than on instate, so this method may be called repeatedly, and will not
+ * interrupt playback.
  *
  * @param {string} file  Audio file path relative to DOCUMENT_ROOT/audio/ directory.
  *
@@ -101,7 +101,7 @@ ZBX_NotificationsAudio.prototype.file = function(file) {
 /**
  * Sets player seek position. There are no safety checks, if one decides to seek out of audio file bounds - no audio.
  *
- * @param {float} seconds
+ * @param {number} seconds
  *
  * @return {ZBX_NotificationsAudio}
  */
@@ -143,6 +143,8 @@ ZBX_NotificationsAudio.prototype.stop = function() {
  * Will play in loop for seconds given, since this call. If "0" given - will just not play. If "-1" is given - file will
  * be played once.
  *
+ * @param {number} seconds
+ *
  * @return {ZBX_NotificationsAudio}
  */
 ZBX_NotificationsAudio.prototype.timeout = function(seconds) {
@@ -174,8 +176,8 @@ ZBX_NotificationsAudio.prototype.getTimeout = function() {
 };
 
 /**
- * This handler will be invoked once audio file has successfully pre-loaded. We attempt to auto play and see,
- * if we have auto play policy error.
+ * This handler will be invoked once audio file has successfully pre-loaded. Attempt to auto play and see, if auto play
+ * policy error occurs.
  */
 ZBX_NotificationsAudio.prototype.handleOnloadeddata = function() {
 	var promise = this.audio.play();
@@ -186,9 +188,11 @@ ZBX_NotificationsAudio.prototype.handleOnloadeddata = function() {
 	}
 
 	promise.catch(function (error) {
-		if (error.name == 'NotAllowedError' && this.audio.paused) {
+		if (error.name === 'NotAllowedError' && this.audio.paused) {
 			console.warn(error.message);
-			console.warn('Zabbix was not able to play audio due to "Autoplay policy". Please see manual for more information.');
+			console.warn(
+				'Zabbix was not able to play audio due to "Autoplay policy". Please see manual for more information.'
+			);
 		}
 	}.bind(this));
 };

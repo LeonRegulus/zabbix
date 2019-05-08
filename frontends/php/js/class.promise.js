@@ -18,7 +18,7 @@
 **/
 
 
-ZBX_Promise.PENDIG = 0;
+ZBX_Promise.PENDING = 0;
 ZBX_Promise.RESOLVED = 1;
 ZBX_Promise.REJECTED = 2;
 
@@ -31,7 +31,7 @@ ZBX_Promise.REJECTED = 2;
  * @param {callable} resolver
  */
 function ZBX_Promise(resolver) {
-	this.state = ZBX_Promise.PENDIG;
+	this.state = ZBX_Promise.PENDING;
 	this.onResolve = function() {};
 	this.onReject = function() {};
 

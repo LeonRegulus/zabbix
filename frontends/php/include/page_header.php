@@ -191,7 +191,8 @@ if ($page['type'] == PAGE_TYPE_HTML) {
 		: 0;
 
 	if (CView::$js_loader_disabled !== true) {
-		$path = 'jsLoader.php?ver='.ZABBIX_VERSION.'&amp;lang='.CWebUser::$data['lang'].'&showGuiMessaging='.$showGuiMessaging;
+		$path = 'jsLoader.php?ver='.ZABBIX_VERSION.'&amp;lang='.CWebUser::$data['lang'].
+					'&showGuiMessaging='.$showGuiMessaging;
 		$pageHeader->addJsFile($path);
 
 		if (!empty($page['scripts']) && is_array($page['scripts'])) {

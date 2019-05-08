@@ -30,41 +30,41 @@ class CControllerNotificationsGet extends CController {
 	}
 
 	protected function doAction() {
-		$msgsettings = getMessageSettings();
-		$triggerLimit = 15;
+		$msg_settings = getMessageSettings();
+		$trigger_limit = 15;
 
 		$result = [
 			'notifications' => [],
 			'listid' => '',
 			'settings' => [
-				'enabled' => (bool) $msgsettings['enabled'],
-				'alarm_timeout' => intval($msgsettings['sounds.repeat']),
-				'msg_timeout' => intval($msgsettings['timeout']),
-				'muted' => (bool) $msgsettings['sounds.mute'],
+				'enabled' => (bool) $msg_settings['enabled'],
+				'alarm_timeout' => intval($msg_settings['sounds.repeat']),
+				'msg_timeout' => intval($msg_settings['timeout']),
+				'muted' => (bool) $msg_settings['sounds.mute'],
 				'files' => [
-					'-1' => $msgsettings['sounds.recovery'],
-					'0' => $msgsettings['sounds.0'],
-					'1' => $msgsettings['sounds.1'],
-					'2' => $msgsettings['sounds.2'],
-					'3' => $msgsettings['sounds.3'],
-					'4' => $msgsettings['sounds.4'],
-					'5' => $msgsettings['sounds.5']
+					'-1' => $msg_settings['sounds.recovery'],
+					'0' => $msg_settings['sounds.0'],
+					'1' => $msg_settings['sounds.1'],
+					'2' => $msg_settings['sounds.2'],
+					'3' => $msg_settings['sounds.3'],
+					'4' => $msg_settings['sounds.4'],
+					'5' => $msg_settings['sounds.5']
 				]
 			]
 		];
 
-		if (!$msgsettings['triggers.severities'] || !$msgsettings['enabled']) {
+		if (!$msg_settings['triggers.severities'] || !$msg_settings['enabled']) {
 			return $this->setResponse(new CControllerResponseData(['main_block' => json_encode($result)]));
 		}
 
 		$options = [
 			'monitored' => true,
-			'lastChangeSince' => max([$msgsettings['last.clock'], time() - $msgsettings['timeout']]),
+			'lastChangeSince' => max([$msg_settings['last.clock'], time() - $msg_settings['timeout']]),
 			'value' => [TRIGGER_VALUE_TRUE, TRIGGER_VALUE_FALSE],
-			'priority' => array_keys($msgsettings['triggers.severities']),
-			'triggerLimit' => $triggerLimit
+			'priority' => array_keys($msg_settings['triggers.severities']),
+			'triggerLimit' => $trigger_limit
 		];
-		if (!$msgsettings['triggers.recovery']) {
+		if (!$msg_settings['triggers.recovery']) {
 			$options['value'] = [TRIGGER_VALUE_TRUE];
 		}
 
@@ -72,11 +72,10 @@ class CControllerNotificationsGet extends CController {
 
 		$sort_clock = [];
 		$sort_event = [];
-		$listid = '';
-
 		$used_triggers = [];
+
 		foreach ($events as $event) {
-			if (count($used_triggers) == $triggerLimit) {
+			if (count($used_triggers) == $trigger_limit) {
 				break;
 			}
 
@@ -108,7 +107,7 @@ class CControllerNotificationsGet extends CController {
 			$result['notifications'][] = [
 				'uid' => $uid,
 				'id' => $event['eventid'],
-				'ttl' => $event['clock'] + $msgsettings['timeout'] - time(),
+				'ttl' => $event['clock'] + $msg_settings['timeout'] - time(),
 				'priority' => $priority,
 				'file' => $fileid,
 				'severity_style' => getSeverityStyle($trigger['priority'], $event['value'] == TRIGGER_VALUE_TRUE),
@@ -131,4 +130,3 @@ class CControllerNotificationsGet extends CController {
 		$this->setResponse(new CControllerResponseData(['main_block' => json_encode($result)]));
 	}
 }
-

@@ -25,7 +25,7 @@ ZBX_Notification.ease = 500;
 
 /**
  * In case if user has set incredibly long notification timeout - he would end up never seeing them, because JS would
- * execute scheduled timeout immediately. So we limit the upper bound.
+ * execute scheduled timeout immediately. So limit the upper bound.
  */
 ZBX_Notification.max_timeout = Math.pow(2, 30);
 
@@ -44,7 +44,7 @@ function ZBX_Notification(options) {
 }
 
 /**
- * Removes previous timeout if it is scheduled, then schedules an timeout to close this message.
+ * Removes previous timeout if it is scheduled, then schedules a timeout to close this message.
  *
  * @param {integer} seconds  Timeout in seconds for 'close' to be called.
  *
@@ -67,9 +67,11 @@ ZBX_Notification.prototype.setTimeout = function(seconds) {
 };
 
 /**
- * Renders this message object.
+ * Renders message object.
  *
  * @depends {BBCode}
+ *
+ * @param {object} obj
  *
  * @return {HTMLElement}  Detached DOM node.
  */
@@ -100,7 +102,7 @@ ZBX_Notification.prototype.makeNode = function(obj) {
 };
 
 /**
- * @param {bool} bool  If true, mark this notification as snoozed.
+ * @param {bool} bool  If true, mark notification as snoozed.
  */
 ZBX_Notification.prototype.renderSnoozed = function(bool) {
 	this.snoozed = bool;
@@ -114,27 +116,30 @@ ZBX_Notification.prototype.renderSnoozed = function(bool) {
 };
 
 /**
- * Remove this notification from DOM.
+ * Remove notification from DOM.
  *
  * @param {number} ease  Amount for slide animation or disable.
  * @param {callable} cb  Closer to be called after remove.
  */
 ZBX_Notification.prototype.remove = function(ease, cb) {
 	var rate = 10;
+
 	ease *= rate;
+
 	if (ease > 0) {
 		this.node.style.overflow = 'hidden';
+
 		var t = ease / rate,
 			step = this.node.offsetHeight / t,
 			id = setInterval(function() {
 				if (t < rate) {
-					/**
-					 * Since there is loaded prototype.js and it extends DOM's native 'remove' method, we have to
-					 * explicitly check if node is connected. Also, case of IE11 there is no 'isConnected' method.
+					/*
+					 * Since there is loaded prototype.js and it extends DOM's native 'remove' method, explicitly check
+					 * if node is connected. Also, case of IE11 there is no 'isConnected' method.
 					 */
 					if (this.node.isConnected || this.node.parentNode) {
 						this.node.remove();
-						cb && cb()
+						cb && cb();
 					}
 					clearInterval(id);
 				}
@@ -146,6 +151,6 @@ ZBX_Notification.prototype.remove = function(ease, cb) {
 	}
 	else {
 		this.node.remove();
-		cb && cb()
+		cb && cb();
 	}
 };

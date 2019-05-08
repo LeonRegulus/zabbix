@@ -24,8 +24,8 @@
 ZBX_BrowserTab.keep_alive_interval = 30;
 
 /**
- * This object is representing a browser tab. Implements singleton pattern. It ensures there are only
- * non-crashed tabs in store. It maintains currently focused tab and last focused tab in store.
+ * This object is representing a browser tab. Implements singleton pattern. It ensures there are only non-crashed tabs
+ * in store. It maintains currently focused tab and last focused tab in store.
  *
  * @param {ZBX_LocalStorage} store  A localStorage wrapper.
  */
@@ -179,9 +179,8 @@ ZBX_BrowserTab.prototype.keepAlive = function() {
 };
 
 /**
- * Writes own ID in `store.tabs` object.  Registers beforeunload event to remove own ID from `store.tabs`.
- * Registers focus and blur events to maintain `store.tabs.lastfocused`.
- * Begins a loop to see if any tab of tabs has crashed.
+ * Writes own ID in `store.tabs` object.  Registers beforeunload event to remove own ID from `store.tabs`. Registers
+ * focus and blur events to maintain `store.tabs.lastfocused`. Begins a loop to see if any tab of tabs has crashed.
  */
 ZBX_BrowserTab.prototype.register = function() {
 	this.keepAlive();

@@ -65,11 +65,11 @@ function ZBX_Notifications(store, tab) {
 	this.poll_interval = ZBX_Notifications.POLL_INTERVAL;
 	this.restartMainLoop();
 
-	/**
-	 * Upon object creation we invoke tab.onFocus hook if tab was not opened in background.
-	 * Re-stack exists because of IE11.
+	/*
+	 * Upon object creation, invoke tab.onFocus hook if tab was not yet opened in background. Re-stack exists
+	 * because of IE11.
 	 */
-	setTimeout(function(){
+	setTimeout(function() {
 		document.hasFocus() && this.onTabFocus(this.tab);
 		this.mainLoop();
 	}.bind(this), 0);
@@ -87,7 +87,7 @@ ZBX_Notifications.prototype.restartMainLoop = function() {
 };
 
 /**
- * Proxies an store update event to various handlers.
+ * Proxies and stores update event to various handlers.
  *
  * @param {string} key   The local storage key.
  * @param {mixed} value  That the key holds.
@@ -162,9 +162,9 @@ ZBX_Notifications.prototype.onPollerReceive = function(resp) {
 	}
 
 	this.store.writeKey('notifications.listid', resp.listid);
-	var all_snoozed = this.applySnoozeProp(resp.notifications);
 
-	var list_obj = ZBX_Notifications.toStorableList(resp.notifications),
+	var all_snoozed = this.applySnoozeProp(resp.notifications),
+		list_obj = ZBX_Notifications.toStorableList(resp.notifications),
 		notifid = ZBX_Notifications.findNotificationToPlay(resp.notifications);
 
 	this.writeAlarm(list_obj[notifid], resp.settings);
@@ -178,8 +178,8 @@ ZBX_Notifications.prototype.onPollerReceive = function(resp) {
 };
 
 /**
- * This is a callback that is bound into notification and called by notification object when it has timed out.
- * Here we check that was the last notification and update store.
+ * Callback that is bound into notification and called by notification object when it has timed out. Check if that was
+ * the last notification and update store.
  *
  * @param {ZBX_Notification} notif
  */
@@ -202,8 +202,8 @@ ZBX_Notifications.prototype.onNotifTimeout = function(notif) {
 };
 
 /**
- * This is a callback that is bound into player instance. Once player has reached timeout we update store to mark
- * this notification as played. This must only happen for playing/focused tab.
+ * Callback that is bound into player instance. Once player has reached timeout we update store to mark this
+ * notification as played. This must only happen for playing/focused tab.
  */
 ZBX_Notifications.prototype.onPlayerTimeout = function() {
 	if (this.do_poll_server) {
@@ -212,7 +212,7 @@ ZBX_Notifications.prototype.onPlayerTimeout = function() {
 };
 
 /**
- * This updates DOM on local storage change.
+ * Updates DOM on local storage change.
  *
  * @param {object} list_obj  Notification ID keyed hash-map of storable notification objects.
  */
@@ -281,7 +281,7 @@ ZBX_Notifications.prototype.onTabUnload = function(tab) {
 };
 
 /**
- * Here we determine if this is the instance that will poll server.
+ * Determine if this is the instance that will poll server.
  *
  * @param {string} tabid.
  */
@@ -302,8 +302,7 @@ ZBX_Notifications.prototype.onTabFocusChanged = function(tabid) {
 };
 
 /**
- * This is bound as callback in ZBX_BrowserTab, and it just passes tab ID into
- * storage key change handler.
+ * Bound as callback in ZBX_BrowserTab, and it just passes tab ID into storage key change handler.
  *
  * @param {ZBX_BrowserTab} tab.
  */
@@ -315,7 +314,7 @@ ZBX_Notifications.prototype.onTabFocus = function(tab) {
  * Adjust alarm settings and update local storage to play a notification.
  *
  * @param {object|null} notif  Notification object in the format it was received from server.
- * @param {object} opts        Notification settings object.
+ * @param {object}      opts   Notification settings object.
  */
 ZBX_Notifications.prototype.writeAlarm = function(notif, opts) {
 	if (!notif) {
@@ -350,9 +349,9 @@ ZBX_Notifications.prototype.writeAlarm = function(notif, opts) {
 	// This write event is an trigger to play action.
 	this.store.writeKey('notifications.alarm.start', notif.uid);
 
-	/**
-	 * Here we re-stack because in chrome the `alarm.start` key sometimes misbehaves, maybe it's because the next call
-	 * reads this key too soon after the write call above.
+	/*
+	 * Re-stack because in chrome the `alarm.start` key sometimes misbehaves, maybe it's because the next call reads
+	 * this key too soon after the write call above.
 	 */
 	setTimeout(this.renderPlayer.bind(this), 0);
 };
@@ -411,7 +410,7 @@ ZBX_Notifications.prototype.applySnoozeProp = function(list) {
 };
 
 /**
- * On a close click we send request to server that marks current notifications as read.
+ * On close click, send a request to server that marks current notifications as read.
  */
 ZBX_Notifications.prototype.btnCloseClicked = function() {
 	var params = {ids: []},
@@ -531,8 +530,8 @@ ZBX_Notifications.prototype.mainLoop = function() {
 /**
  * Finds most severe, most recent, not-snoozed notification.
  *
- * A list we got from server reflects current notifications within timeout. To find a notification to play,
- * we must filter out any snoozed notifications. We sort by severity first, then by timeout.
+ * List received from server reflects current notifications within timeout. To find a notification to play, filter
+ * out any snoozed notifications. First sort by severity, then by timeout.
  *
  * @param list array  Notification objects in server provided format.
  *

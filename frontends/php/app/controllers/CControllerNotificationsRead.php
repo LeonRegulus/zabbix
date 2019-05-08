@@ -41,7 +41,7 @@ class CControllerNotificationsRead extends CController {
 	}
 
 	protected function doAction() {
-		$msgsettings = getMessageSettings();
+		$msg_settings = getMessageSettings();
 
 		$events = API::Event()->get([
 			'output'    => ['clock'],
@@ -53,8 +53,8 @@ class CControllerNotificationsRead extends CController {
 
 		$last_event = reset($events);
 
-		$msgsettings['last.clock'] = $last_event['clock'] + 1;
-		updateMessageSettings($msgsettings);
+		$msg_settings['last.clock'] = $last_event['clock'] + 1;
+		updateMessageSettings($msg_settings);
 
 		$data = json_encode(['ids' => array_keys($events)]);
 		$this->setResponse(new CControllerResponseData(['main_block' => $data]));

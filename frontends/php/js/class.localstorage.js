@@ -40,6 +40,7 @@ function ZBX_LocalStorage(version, prefix) {
 	if (ZBX_LocalStorage.instance) {
 		return ZBX_LocalStorage.instance;
 	}
+
 	ZBX_LocalStorage.sessionid = prefix;
 	ZBX_LocalStorage.prefix = prefix + ZBX_LocalStorage.defines.PREFIX_SEPARATOR;
 	ZBX_LocalStorage.instance = this;
@@ -78,9 +79,9 @@ function ZBX_LocalStorage(version, prefix) {
 		'notifications.poll_interval': 0,
 		// Disabled setting tells notifier objects to stop audio, hide notifications and to stop following active tab.
 		'notifications.disabled': false
-	}
+	};
 
-	/**
+	/*
 	 * This subset of keys will be mirrored in session storage to be read if session storage has no value under a key.
 	 * This way we survive data across page reloads in case of single tab.
 	 */
@@ -90,7 +91,7 @@ function ZBX_LocalStorage(version, prefix) {
 		'notifications.snoozedids': true,
 		'notifications.list': true,
 		'notifications.disabled': true
-	}
+	};
 
 	if (this.readKey('version') != this.keys.version) {
 		this.truncate();
@@ -251,7 +252,8 @@ ZBX_LocalStorage.prototype.readKey = function(key) {
 				|| this.wrap(this.keys[key]);
 
 		return this.unwrap(item).payload;
-	} catch (e) {
+	}
+	catch (e) {
 		console.warn('failed to parse storage item "' + key + '"');
 		this.truncate();
 		this.truncateBackup();
@@ -326,8 +328,6 @@ ZBX_LocalStorage.prototype.destruct = function() {
 
 /**
  * Backup keys are removed.
- *
- * @param {string} value
  */
 ZBX_LocalStorage.prototype.truncateBackup = function() {
 	var abs_key, key, i;
@@ -345,7 +345,7 @@ ZBX_LocalStorage.prototype.truncateBackup = function() {
 /**
  * Removes all local storage and creates default objects. Backup keys are not removed.
  *
- * @param {callable?} filter_cb  Optional callback which return true if key should be removed.
+ * @param {callable} filter_cb  Optional callback which return true if key should be removed.
  */
 ZBX_LocalStorage.prototype.truncate = function(filter_cb) {
 	var iter = this.iterator();
@@ -377,17 +377,17 @@ ZBX_LocalStorage.prototype.onUpdate = function(callback) {
 			return this.mapCallback(callback);
 		}
 
-		// I do not know why this may happen, but it does.
-		// Null cannot be accepted, because we should be able to unwrap the value.
+		// This happens for unknown reason. Null cannot be accepted, because we should be able to unwrap the value.
 		if (event.newValue === null) {
 			return;
 		}
 
-		/**
+		/*
 		 * Not only IE dispatches 'storage' event 'onwrite' instead of 'onchange', but event is also dispatched onto
 		 * window that is the modifier. So we need to sign all payloads.
 		 */
 		var value = this.unwrap(event.newValue);
+
 		if (value.signature !== ZBX_LocalStorage.signature) {
 			callback(this.fromAbsKey(event.key), value.payload, ZBX_LocalStorage.defines.EVT_CHANGE);
 		}

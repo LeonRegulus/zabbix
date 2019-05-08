@@ -85,7 +85,7 @@ ZBX_NotificationCollection.prototype.makeToggleBtn = function(attrs_inactive, at
 		for (attr_name in attrs) {
 			this.setAttribute(attr_name, attrs[attr_name]);
 		}
-	}
+	};
 
 	return button;
 };
@@ -113,15 +113,15 @@ ZBX_NotificationCollection.prototype.show = function() {
 ZBX_NotificationCollection.prototype.hide = function() {
 	this.node.style.opacity = 1;
 
-	var op = 1;
-	var id = setInterval(function() {
-		op -= 0.1;
-		if (op < 0 || !this.hidden) {
-			this.hidden = true;
-			return clearInterval(id);
-		}
-		this.style.opacity = op;
-	}.bind(this.node), 50);
+	var op = 1,
+		id = setInterval(function() {
+			op -= 0.1;
+			if (op < 0 || !this.hidden) {
+				this.hidden = true;
+				return clearInterval(id);
+			}
+			this.style.opacity = op;
+		}.bind(this.node), 50);
 };
 
 /**
@@ -140,6 +140,7 @@ ZBX_NotificationCollection.prototype.renderFromStorable = function(list_obj) {
 		this.list[id].onTimeout = this.onTimeout;
 		frag.appendChild(this.list[id].node);
 	}.bind(this));
+
 	this.list_node.innerHTML = '';
 
 	if (frag.childNodes.length) {
