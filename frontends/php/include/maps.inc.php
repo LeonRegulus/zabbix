@@ -748,7 +748,7 @@ function getSelementsInfo(array $sysmap, array $options = []) {
 		$lately_changed = 0;
 
 		foreach ($selement['triggers'] as $trigger) {
-			if ($trigger['status'] == TRIGGER_STATUS_DISABLED && $options['severity_min'] <= $trigger['priority']) {
+			if ($trigger['status'] == TRIGGER_STATUS_DISABLED) {
 				continue;
 			}
 
@@ -766,7 +766,7 @@ function getSelementsInfo(array $sysmap, array $options = []) {
 						}
 						elseif ($critical_problem['severity'] === $problem['severity']) {
 							if ($selement['elementtype'] == SYSMAP_ELEMENT_TYPE_TRIGGER) {
-								if ($problem['objectid'] === $critical_problem['objectid']
+								if ($critical_problem['objectid'] === $problem['objectid']
 										&& $critical_problem['eventid'] < $problem['eventid']) {
 									$critical_problem = $problem;
 								}
