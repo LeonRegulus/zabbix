@@ -22,7 +22,11 @@
 class CControllerNotificationsGet extends CController {
 
 	protected function checkInput() {
-		return true;
+		$fields = [
+			'old_srv_time' => 'required|int32'
+		];
+
+		return $this->validateInput($fields);
 	}
 
 	protected function checkPermissions() {
@@ -31,11 +35,13 @@ class CControllerNotificationsGet extends CController {
 
 	protected function doAction() {
 		$msg_settings = getMessageSettings();
+
 		$trigger_limit = 15;
 
 		$result = [
 			'notifications' => [],
 			'listid' => '',
+			'srv_time' => time(),
 			'settings' => [
 				'enabled' => (bool) $msg_settings['enabled'],
 				'alarm_timeout' => intval($msg_settings['sounds.repeat']),
@@ -75,6 +81,15 @@ class CControllerNotificationsGet extends CController {
 		$used_triggers = [];
 
 		foreach ($events as $event) {
+
+			if ($this->input['old_srv_time']) {
+				$poll_interval = time() - $this->input['old_srv_time'];
+				$ttl_delta = $poll_interval - ((time() - $event['clock']) % $poll_interval);
+			}
+			else {
+				$ttl_delta = 0;
+			}
+
 			if (count($used_triggers) == $trigger_limit) {
 				break;
 			}
@@ -107,7 +122,7 @@ class CControllerNotificationsGet extends CController {
 			$result['notifications'][] = [
 				'uid' => $uid,
 				'id' => $event['eventid'],
-				'ttl' => $event['clock'] + $msg_settings['timeout'] - time(),
+				'ttl' => $ttl_delta + $event['clock'] + $msg_settings['timeout'] - time(),
 				'priority' => $priority,
 				'file' => $fileid,
 				'severity_style' => getSeverityStyle($trigger['priority'], $event['value'] == TRIGGER_VALUE_TRUE),
