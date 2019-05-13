@@ -255,7 +255,7 @@ ZBX_LocalStorage.prototype.readKey = function(key) {
 
 		return this.unwrap(item).payload;
 	}
-	catch () {
+	catch(e) {
 		console.warn('failed to parse storage item "' + key + '"');
 		this.truncate();
 		this.truncateBackup();
@@ -390,7 +390,7 @@ ZBX_LocalStorage.prototype.onUpdate = function(callback) {
 				callback(this.fromAbsKey(event.key), value.payload, ZBX_LocalStorage.defines.EVT_CHANGE);
 			}
 		}
-		catch() {
+		catch(e) {
 			// If value could not be unwraped, it has not originated from this class.
 		}
 	}.bind(this));
