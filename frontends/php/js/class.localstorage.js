@@ -255,7 +255,7 @@ ZBX_LocalStorage.prototype.readKey = function(key) {
 
 		return this.unwrap(item).payload;
 	}
-	catch (e) {
+	catch () {
 		console.warn('failed to parse storage item "' + key + '"');
 		this.truncate();
 		this.truncateBackup();
@@ -379,19 +379,19 @@ ZBX_LocalStorage.prototype.onUpdate = function(callback) {
 			return this.mapCallback(callback);
 		}
 
-		// This happens for unknown reason. Null cannot be accepted, because we should be able to unwrap the value.
-		if (event.newValue === null) {
-			return;
+		try {
+			/*
+			 * Not only IE dispatches 'storage' event 'onwrite' instead of 'onchange', but event is also dispatched onto
+			 * window that is the modifier. So we need to sign all payloads.
+			 */
+			var value = this.unwrap(event.newValue);
+
+			if (value.signature !== ZBX_LocalStorage.signature) {
+				callback(this.fromAbsKey(event.key), value.payload, ZBX_LocalStorage.defines.EVT_CHANGE);
+			}
 		}
-
-		/*
-		 * Not only IE dispatches 'storage' event 'onwrite' instead of 'onchange', but event is also dispatched onto
-		 * window that is the modifier. So we need to sign all payloads.
-		 */
-		var value = this.unwrap(event.newValue);
-
-		if (value.signature !== ZBX_LocalStorage.signature) {
-			callback(this.fromAbsKey(event.key), value.payload, ZBX_LocalStorage.defines.EVT_CHANGE);
+		catch() {
+			// If value could not be unwraped, it has not originated from this class.
 		}
 	}.bind(this));
 };
