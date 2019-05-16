@@ -110,16 +110,14 @@ $itemFormList->addRow(
 
 // ITEM_TYPE_HTTPAGENT Request body type.
 $itemFormList->addRow(
-	(new CVisibilityBox('visible[post_type]', 'post_type_container', _('Original')))
+	(new CVisibilityBox('visible[post_type]', 'post_type', _('Original')))
 		->setLabel(_('Request body type'))
 		->setChecked(array_key_exists('post_type', $data['visible'])),
-	(new CDiv(
-		(new CRadioButtonList('post_type', (int) $data['post_type']))
-			->addValue(_('Raw data'), ZBX_POSTTYPE_RAW)
-			->addValue(_('JSON data'), ZBX_POSTTYPE_JSON)
-			->addValue(_('XML data'), ZBX_POSTTYPE_XML)
-			->setModern(true)
-	))->setId('post_type_container')
+	(new CRadioButtonList('post_type', (int) $data['post_type']))
+		->addValue(_('Raw data'), ZBX_POSTTYPE_RAW)
+		->addValue(_('JSON data'), ZBX_POSTTYPE_JSON)
+		->addValue(_('XML data'), ZBX_POSTTYPE_XML)
+		->setModern(true)
 );
 
 // ITEM_TYPE_HTTPAGENT Request body.

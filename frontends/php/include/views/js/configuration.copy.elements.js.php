@@ -48,6 +48,8 @@
 			$('#copy_targets').html($multiselect);
 
 			$multiselect.multiSelectHelper(helper_options);
+
+			$('div.multiselect-control').unwrap();
 		}
 
 		$('#copy_type').on('change', changeTargetType);
