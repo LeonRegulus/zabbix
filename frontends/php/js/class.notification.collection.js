@@ -129,13 +129,17 @@ ZBX_NotificationCollection.prototype.hide = function() {
  *
  * @param {object} list_obj  Notifications list object in format it is stored in local storage.
  */
-ZBX_NotificationCollection.prototype.renderFromStorable = function(list_obj) {
-	var frag = document.createDocumentFragment();
+ZBX_NotificationCollection.prototype.renderFromStorable = function(list_obj, timeouts_obj) {
+	var time_local = (+new Date / 1000),
+		frag = document.createDocumentFragment();
 
 	this.list = {};
 
 	Object.keys(list_obj).reverse().forEach(function(id) {
+		var timeout = timeouts_obj[id];
+
 		this.list[id] = new ZBX_Notification(list_obj[id]);
+		this.list[id].setTimeout(timeout.recv_time - time_local + timeout.msg_timeout);
 		this.list[id].renderSnoozed(list_obj[id].snoozed);
 		this.list[id].onTimeout = this.onTimeout;
 		frag.appendChild(this.list[id].node);

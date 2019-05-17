@@ -78,7 +78,9 @@ function ZBX_LocalStorage(version, prefix) {
 		// Poll interval will be reduced, if there is possibility for user to miss new notifications.
 		'notifications.poll_interval': 0,
 		// Disabled setting tells notifier objects to stop audio, hide notifications and to stop following active tab.
-		'notifications.disabled': false
+		'notifications.disabled': false,
+		// An object of timeout setting and client time at first render, keyed by notification id.
+		'notifications.localtimeouts': {}
 	};
 
 	/*
@@ -90,7 +92,8 @@ function ZBX_LocalStorage(version, prefix) {
 		'notifications.alarm.snoozed': true,
 		'notifications.snoozedids': true,
 		'notifications.list': true,
-		'notifications.disabled': true
+		'notifications.disabled': true,
+		'notifications.localtimeouts': true
 	};
 
 	if (this.readKey('version') != this.keys.version) {

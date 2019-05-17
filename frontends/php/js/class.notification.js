@@ -37,8 +37,7 @@ ZBX_Notification.max_timeout = Math.pow(2, 30);
 function ZBX_Notification(options) {
 	this.uid       = options.uid;
 	this.node      = this.makeNode(options);
-	this.ttl       = options.ttl;
-	this.timeoutid = this.setTimeout(options.ttl);
+	this.timeoutid = 0;
 	this.onTimeout = function() {};
 	this.snoozed   = options.snoozed;
 }
@@ -48,22 +47,28 @@ function ZBX_Notification(options) {
  *
  * @param {integer} seconds  Timeout in seconds for 'close' to be called.
  *
- * @return integer  Timeout ID.
+ * @return ZBX_Notification
  */
 ZBX_Notification.prototype.setTimeout = function(seconds) {
+	clearTimeout(this.timeoutid);
+
+	if (seconds <= 0) {
+		this.onTimeout(this);
+
+		return this;
+	}
+
 	var ms = seconds * 1000;
 
 	if (ms > ZBX_Notification.max_timeout) {
 		ms = ZBX_Notification.max_timeout;
 	}
 
-	if (this.timeoutid) {
-		clearTimeout(this.timeout);
-	}
-
-	return setTimeout(function() {
+	this.timeoutid = setTimeout(function() {
 		this.onTimeout(this);
 	}.bind(this), ms);
+
+	return this;
 };
 
 /**

@@ -107,7 +107,6 @@ class CControllerNotificationsGet extends CController {
 			$result['notifications'][] = [
 				'uid' => $uid,
 				'id' => $event['eventid'],
-				'ttl' => $event['clock'] + $msg_settings['timeout'] - time(),
 				'priority' => $priority,
 				'file' => $fileid,
 				'severity_style' => getSeverityStyle($trigger['priority'], $event['value'] == TRIGGER_VALUE_TRUE),
@@ -125,7 +124,9 @@ class CControllerNotificationsGet extends CController {
 		}
 
 		array_multisort($sort_clock, SORT_ASC, $sort_event, SORT_ASC, $result['notifications']);
-		$result['listid'] = sprintf('%u', crc32($result['listid']));
+		$result['listid'] = sprintf('%u:%u:%u',
+			crc32($result['listid']), $result['settings']['alarm_timeout'], $result['settings']['msg_timeout']
+		);
 
 		$this->setResponse(new CControllerResponseData(['main_block' => json_encode($result)]));
 	}

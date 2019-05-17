@@ -113,6 +113,9 @@ ZBX_Notifications.prototype.onStoreUpdate = function(key, value) {
 		case 'notifications.alarm.snoozed':
 			this.onSnoozeChange(value);
 			break;
+		case 'notifications.localtimeouts':
+			this.onNotificationsList(this.store.readKey('notifications.list'), value);
+			break;
 		case 'notifications.list':
 			this.onNotificationsList(value);
 			break;
@@ -130,6 +133,67 @@ ZBX_Notifications.prototype.onStoreUpdate = function(key, value) {
 			break;
 	}
 };
+
+/**
+ * Handles server response. Local timedouts object is maintained. If notificaion is not in server response,
+ * it might be recovered if it should still be visible.
+ *
+ * @param {object} resp  Server response object.
+ */
+ZBX_Notifications.prototype.onPollerReceiveUpdates = function(resp) {
+	var time_local = (+new Date / 1000),
+		stored_list = this.store.readKey('notifications.list'),
+		current_timeouts = this.store.readKey('notifications.localtimeouts'),
+		recv_ids = [],
+		list_obj = {},
+		all_snoozed = false,
+		notifid;
+
+	resp.notifications.forEach(function(notif) {
+		recv_ids.push(notif.uid);
+		if (!current_timeouts[notif.uid]) {
+			current_timeouts[notif.uid] = {recv_time: time_local, msg_timeout: resp.settings.msg_timeout}
+		}
+		else {
+			current_timeouts[notif.uid].msg_timeout = resp.settings.msg_timeout;
+		}
+	});
+
+	// Filter timedout.
+	for (var id in current_timeouts) {
+		if (current_timeouts[id].recv_time + current_timeouts[id].msg_timeout < time_local) {
+			delete current_timeouts[id];
+		}
+	}
+
+	// Unreceived notifs.
+	Object.keys(current_timeouts).forEach(function(id) {
+		if (recv_ids.indexOf(id) === -1) {
+			resp.notifications.push(stored_list[id]);
+		}
+	});
+
+	// Object from modified response array.
+	resp.notifications.forEach(function(raw_notif) {
+		var timeout = current_timeouts[id];
+
+		list_obj[raw_notif.uid] = raw_notif;
+		list_obj[raw_notif.uid].ttl = time_local - timeout.recv_time + timeout.msg_timeout;
+	});
+
+	all_snoozed = this.applySnoozeProp(resp.notifications),
+	notifid = ZBX_Notifications.findNotificationToPlay(resp.notifications);
+
+	this.writeAlarm(list_obj[notifid], resp.settings);
+
+	this.store.writeKey('notifications.list', list_obj);
+	this.onNotificationsList(list_obj, current_timeouts);
+
+	this.store.writeKey('notifications.localtimeouts', current_timeouts);
+	this.store.writeKey('notifications.alarm.snoozed', all_snoozed);
+
+	this.onSnoozeChange(all_snoozed);
+}
 
 /**
  * Handles server response.
@@ -162,19 +226,7 @@ ZBX_Notifications.prototype.onPollerReceive = function(resp) {
 	}
 
 	this.store.writeKey('notifications.listid', resp.listid);
-
-	var all_snoozed = this.applySnoozeProp(resp.notifications),
-		list_obj = ZBX_Notifications.toStorableList(resp.notifications),
-		notifid = ZBX_Notifications.findNotificationToPlay(resp.notifications);
-
-	this.writeAlarm(list_obj[notifid], resp.settings);
-
-	this.store.writeKey('notifications.list', list_obj);
-	this.onNotificationsList(list_obj);
-
-	this.store.writeKey('notifications.alarm.snoozed', all_snoozed);
-
-	this.onSnoozeChange(all_snoozed);
+	this.onPollerReceiveUpdates(resp);
 };
 
 /**
@@ -193,6 +245,10 @@ ZBX_Notifications.prototype.onNotifTimeout = function(notif) {
 			this.store.writeKey('notifications.alarm.end', notif.uid);
 			this.player.stop();
 		}
+
+		this.store.mutateObject('notifications.localtimeouts', function(list_obj) {
+			delete list_obj[notif.uid];
+		});
 
 		this.store.mutateObject('notifications.list', function(list_obj) {
 			delete list_obj[notif.uid];
@@ -215,9 +271,11 @@ ZBX_Notifications.prototype.onPlayerTimeout = function() {
  * Updates DOM on local storage change.
  *
  * @param {object} list_obj  Notification ID keyed hash-map of storable notification objects.
+ * @param {object} timeouts_obj  Optional reference, if it is possible to read store less often.
  */
-ZBX_Notifications.prototype.onNotificationsList = function(list_obj) {
-	var length = this.dom.renderFromStorable(list_obj);
+ZBX_Notifications.prototype.onNotificationsList = function(list_obj, timeouts_obj) {
+	var timeouts_obj = timeouts_obj || this.store.readKey('notifications.localtimeouts'),
+		length = this.dom.renderFromStorable(list_obj, timeouts_obj);
 
 	if (length) {
 		this.dom.node.hidden && this.dom.show();
@@ -425,6 +483,7 @@ ZBX_Notifications.prototype.btnCloseClicked = function() {
 		.catch(console.error)
 		.then(function(resp) {
 			this.store.resetKey('notifications.list');
+			this.store.resetKey('notifications.localtimeouts');
 			this.onNotificationsList({});
 
 			this.store.resetKey('notifications.alarm.start');
@@ -559,25 +618,6 @@ ZBX_Notifications.findNotificationToPlay = function(list) {
 		priority: -1,
 		ttl: -1
 	}).uid;
-}
-
-/**
- * Converts server response notifications into notification list-object.
- *
- * @param {array} list
- */
-ZBX_Notifications.toStorableList = function(list) {
-	if (list && list.constructor != Array) {
-		throw 'Expected array.';
-	}
-
-	var list_obj = {};
-
-	list.forEach(function(raw_notif) {
-		list_obj[raw_notif.uid] = raw_notif;
-	});
-
-	return list_obj;
 }
 
 /**
