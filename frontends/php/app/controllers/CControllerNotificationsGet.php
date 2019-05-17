@@ -22,11 +22,7 @@
 class CControllerNotificationsGet extends CController {
 
 	protected function checkInput() {
-		$fields = [
-			'old_srv_time' => 'required|int32'
-		];
-
-		return $this->validateInput($fields);
+		return true;
 	}
 
 	protected function checkPermissions() {
@@ -35,13 +31,11 @@ class CControllerNotificationsGet extends CController {
 
 	protected function doAction() {
 		$msg_settings = getMessageSettings();
-
 		$trigger_limit = 15;
 
 		$result = [
 			'notifications' => [],
 			'listid' => '',
-			'srv_time' => time(),
 			'settings' => [
 				'enabled' => (bool) $msg_settings['enabled'],
 				'alarm_timeout' => intval($msg_settings['sounds.repeat']),
@@ -65,7 +59,7 @@ class CControllerNotificationsGet extends CController {
 
 		$options = [
 			'monitored' => true,
-			'lastChangeSince' => max([$msg_settings['last.clock'], time() - 2 * $msg_settings['timeout']]),
+			'lastChangeSince' => max([$msg_settings['last.clock'], time() - $msg_settings['timeout']]),
 			'value' => [TRIGGER_VALUE_TRUE, TRIGGER_VALUE_FALSE],
 			'priority' => array_keys($msg_settings['triggers.severities']),
 			'triggerLimit' => $trigger_limit
@@ -81,20 +75,6 @@ class CControllerNotificationsGet extends CController {
 		$used_triggers = [];
 
 		foreach ($events as $event) {
-
-			if ($this->input['old_srv_time']) {
-				$poll_interval = time() - $this->input['old_srv_time'];
-				$ttl_delta = $poll_interval - ((time() - $event['clock']) % $poll_interval);
-			}
-			else {
-				$ttl_delta = $msg_settings['timeout'];
-			}
-
-			$ttl = $ttl_delta + $event['clock'] + $msg_settings['timeout'] - time();
-			if ($ttl < 0) {
-				continue;
-			}
-
 			if (count($used_triggers) == $trigger_limit) {
 				break;
 			}
@@ -127,7 +107,7 @@ class CControllerNotificationsGet extends CController {
 			$result['notifications'][] = [
 				'uid' => $uid,
 				'id' => $event['eventid'],
-				'ttl' => $ttl,
+				'ttl' => $event['clock'] + $msg_settings['timeout'] - time(),
 				'priority' => $priority,
 				'file' => $fileid,
 				'severity_style' => getSeverityStyle($trigger['priority'], $event['value'] == TRIGGER_VALUE_TRUE),

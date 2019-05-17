@@ -61,8 +61,6 @@ function ZBX_LocalStorage(version, prefix) {
 		'notifications.snoozedids': {},
 		// Holds a list checksum. This way we know if list we received has updates.
 		'notifications.listid': '',
-		// Server time.
-		'notifications.srv_time': 0,
 		// Represents state of snooze icon.
 		'notifications.alarm.snoozed': '',
 		// No audio for notifications will be played.

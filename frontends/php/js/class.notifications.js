@@ -62,7 +62,6 @@ function ZBX_Notifications(store, tab) {
 
 	this.player.onTimeout = this.onPlayerTimeout.bind(this);
 
-	this.srv_time = 0;
 	this.poll_interval = ZBX_Notifications.POLL_INTERVAL;
 	this.restartMainLoop();
 
@@ -114,9 +113,6 @@ ZBX_Notifications.prototype.onStoreUpdate = function(key, value) {
 		case 'notifications.alarm.snoozed':
 			this.onSnoozeChange(value);
 			break;
-		case 'notifications.srv_time':
-			this.srv_time = value;
-			break;
 		case 'notifications.list':
 			this.onNotificationsList(value);
 			break;
@@ -159,9 +155,6 @@ ZBX_Notifications.prototype.onPollerReceive = function(resp) {
 
 		return;
 	}
-
-	this.srv_time = resp.srv_time;
-	this.store.writeKey('notifications.srv_time', this.srv_time);
 
 	this.writeSettings(resp.settings);
 	if (this.store.readKey('notifications.listid') == resp.listid) {
@@ -529,7 +522,7 @@ ZBX_Notifications.prototype.mainLoop = function() {
 		return;
 	}
 
-	this.fetch('notifications.get', {old_srv_time: this.srv_time})
+	this.fetch('notifications.get')
 		.catch(console.error)
 		.then(this.onPollerReceive.bind(this));
 };
