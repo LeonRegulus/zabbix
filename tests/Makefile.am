@@ -28,4 +28,6 @@ libzbxmockdata_a_SOURCES = \
 	zbxmockhelper.c \
 	zbxmockhelper.h \
 	zbxmockcomm.c \
-	zbxmocklog.c
+	zbxmocklog.c \
+	zbxmockjson.c \
+	zbxmockjson.h
