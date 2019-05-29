@@ -709,15 +709,15 @@ function getSelementsInfo(array $sysmap, array $options = []) {
 	$problems = API::Problem()->get([
 		'output' => ['eventid', 'objectid', 'name', 'acknowledged', 'clock', 'r_clock', 'severity'],
 		'objectids' => array_keys($triggerids),
-		'recent' => true,
 		'acknowledged' => ($sysmap['show_unack'] == EXTACK_OPTION_UNACK) ? false : null,
-		'suppressed' => ($sysmap['show_suppressed'] == ZBX_PROBLEM_SUPPRESSED_FALSE) ? false : null
+		'severities' => range($options['severity_min'], TRIGGER_SEVERITY_COUNT - 1),
+		'suppressed' => ($sysmap['show_suppressed'] == ZBX_PROBLEM_SUPPRESSED_FALSE) ? false : null,
+		'recent' => true
 	]);
 
 	foreach ($selements as $snum => $selement) {
 		foreach ($problems as $problem) {
-			if (array_key_exists($problem['objectid'], $selement['triggers'])
-					&& $options['severity_min'] <= $problem['severity']) {
+			if (array_key_exists($problem['objectid'], $selement['triggers'])) {
 				$selements[$snum]['triggers'][$problem['objectid']]['problems'][] = $problem;
 			}
 		}
