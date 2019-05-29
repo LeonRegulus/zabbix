@@ -230,6 +230,7 @@ static char	shortopts[] =
 static char		*TEST_METRIC = NULL;
 int			threads_num = 0;
 ZBX_THREAD_HANDLE	*threads = NULL;
+static int		*threads_flags;
 
 unsigned char	program_type = ZBX_PROGRAM_TYPE_AGENTD;
 
@@ -1018,6 +1019,7 @@ int	MAIN_ZABBIX_ENTRY(int flags)
 	}
 #endif
 	threads = (ZBX_THREAD_HANDLE *)zbx_calloc(threads, threads_num, sizeof(ZBX_THREAD_HANDLE));
+	threads_flags = (int *)zbx_calloc(threads_flags, threads_num, sizeof(int));
 
 	zabbix_log(LOG_LEVEL_INFORMATION, "agent #0 started [main process]");
 
@@ -1112,8 +1114,9 @@ void	zbx_free_service_resources(int ret)
 {
 	if (NULL != threads)
 	{
-		zbx_threads_wait(threads, threads_num, ret);	/* wait for all child processes to exit */
+		zbx_threads_wait(threads, threads_flags, threads_num, ret);	/* wait for all child processes to exit */
 		zbx_free(threads);
+		zbx_free(threads_flags);
 	}
 
 #ifdef HAVE_PTHREAD_PROCESS_SHARED

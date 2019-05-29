@@ -21,6 +21,8 @@
 #include "log.h"
 #include "threads.h"
 
+#define ZBX_THREAD_WAIT_TIMEOUT	5
+
 #if !defined(_WINDOWS)
 /******************************************************************************
  *                                                                            *
@@ -198,30 +200,10 @@ int	zbx_thread_wait(ZBX_THREAD_HANDLE thread)
 	return status;
 }
 
-/******************************************************************************
- *                                                                            *
- * Function: zbx_threads_wait                                                 *
- *                                                                            *
- * Purpose: Waits until the "threads" are in the signalled state              *
- *                                                                            *
- * Parameters: "threads" handles                                              *
- *                                                                            *
- *                                                                            *
- ******************************************************************************/
-void	zbx_threads_wait(ZBX_THREAD_HANDLE *threads, int threads_num, int ret)
+static void	threads_kill(ZBX_THREAD_HANDLE *threads, int threads_num, int ret)
 {
-	int		i;
-#if !defined(_WINDOWS)
-	sigset_t	set;
+	int	i;
 
-	/* ignore SIGCHLD signals in order for zbx_sleep() to work */
-	sigemptyset(&set);
-	sigaddset(&set, SIGCHLD);
-	sigprocmask(SIG_BLOCK, &set, NULL);
-#else
-	/* wait for threads to finish first. although listener threads will never end */
-	WaitForMultipleObjectsEx(threads_num, threads, TRUE, 1000, FALSE);
-#endif
 	for (i = 0; i < threads_num; i++)
 	{
 		if (!threads[i])
@@ -232,6 +214,67 @@ void	zbx_threads_wait(ZBX_THREAD_HANDLE *threads, int threads_num, int ret)
 		else
 			zbx_thread_kill(threads[i]);
 	}
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_threads_wait                                                 *
+ *                                                                            *
+ * Purpose: Waits until the "threads" are in the signalled state              *
+ *                                                                            *
+ * Parameters: "threads" handles                                              *
+ *                                                                            *
+ *                                                                            *
+ ******************************************************************************/
+void	zbx_threads_wait(ZBX_THREAD_HANDLE *threads, const int *threads_flags, int threads_num, int ret)
+{
+	int		i;
+#if !defined(_WINDOWS)
+	sigset_t	set;
+
+	/* ignore SIGCHLD signals in order for zbx_sleep() to work */
+	sigemptyset(&set);
+	sigaddset(&set, SIGCHLD);
+	sigprocmask(SIG_BLOCK, &set, NULL);
+
+	threads_kill(threads, threads_num, ret);
+
+	/* wait for flagged threads to finish their work before terminating the rest */
+	for (i = 0; i < threads_num; i++)
+	{
+		if (!threads[i] || 0 == threads_flags[i])
+			continue;
+
+		zbx_thread_wait(threads[i]);
+
+		threads[i] = ZBX_THREAD_HANDLE_NULL;
+	}
+
+	for (i = 0; i < threads_num; i++)
+	{
+		int	zbx_timed_out;
+
+		if (!threads[i])
+			continue;
+
+		zbx_alarm_on(ZBX_THREAD_WAIT_TIMEOUT);
+		zbx_thread_wait(threads[i]);
+		zbx_timed_out = zbx_alarm_timed_out();
+		zbx_alarm_off();
+
+		if (SUCCEED == zbx_timed_out)
+		{
+			threads_kill(threads, threads_num, FAIL);
+			i--;
+			continue;
+		}
+
+		threads[i] = ZBX_THREAD_HANDLE_NULL;
+	}
+#else
+	/* wait for threads to finish first. although listener threads will never end */
+	WaitForMultipleObjectsEx(threads_num, threads, TRUE, 1000, FALSE);
+	threads_kill(threads, threads_num, ret);
 
 	for (i = 0; i < threads_num; i++)
 	{
@@ -242,6 +285,7 @@ void	zbx_threads_wait(ZBX_THREAD_HANDLE *threads, int threads_num, int ret)
 
 		threads[i] = ZBX_THREAD_HANDLE_NULL;
 	}
+#endif
 }
 
 long int	zbx_get_thread_id(void)
