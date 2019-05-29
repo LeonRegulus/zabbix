@@ -416,7 +416,7 @@ function getSelementInfo(array $i, $show_unack = null) {
 
 		$info['info']['ok'] = [
 			'msg' => _('OK'),
-			'color' => getSelementLabelColor(false, $i['ack'])
+			'color' => getSelementLabelColor(false, $info['ack'])
 		];
 	}
 
