@@ -269,16 +269,29 @@ function addElementNames(array &$selements) {
  * Returns selement icon rendering parameters.
  *
  * @param array    $i
- * @param int      $i['elementtype']    Possible values:
- *                                      SYSMAP_ELEMENT_TYPE_HOST, SYSMAP_ELEMENT_TYPE_MAP, SYSMAP_ELEMENT_TYPE_TRIGGER,
- *                                      SYSMAP_ELEMENT_TYPE_HOST_GROUP, SYSMAP_ELEMENT_TYPE_IMAGE.
- * @param int      $i['expandproblem']  Map "Display problems" option. Possible values:
- *                                      SYSMAP_SINGLE_PROBLEM, SYSMAP_PROBLEMS_NUMBER, SYSMAP_PROBLEMS_NUMBER_CRITICAL.
- * @param int      $i['problem']        The number of problems.
- * @param string   $i['problem_title']  The name of the most critical problem.
- * @param int      $i['problem_unack']  The number of unacknowledged problems.
- * @param int|null $show_unack          (optional) Map "Problem display" option. Possible values:
- *                                      EXTACK_OPTION_ALL, EXTACK_OPTION_UNACK, EXTACK_OPTION_BOTH.
+ * @param int      $i['elementtype']         Element type. Possible values:
+ *                                           SYSMAP_ELEMENT_TYPE_HOST, SYSMAP_ELEMENT_TYPE_MAP,
+ *                                           SYSMAP_ELEMENT_TYPE_TRIGGER, SYSMAP_ELEMENT_TYPE_HOST_GROUP,
+ *                                           SYSMAP_ELEMENT_TYPE_IMAGE.
+ * @param int      $i['disabled']            The number of disabled hosts.
+ * @param int      $i['maintenance']         The number of hosts in maintenance.
+ * @param int      $i['problem']             The number of problems.
+ * @param int      $i['problem_unack']       The number of unacknowledged problems.
+ * @param int      $i['iconid_off']          Icon ID for element without problems.
+ * @param int      $i['iconid_on']           Icon ID for element with problems.
+ * @param int      $i['iconid_maintenance']  Icon ID for element with hosts in maintenance.
+ * @param int      $i['iconid_disabled']     Icon ID for disabled element.
+ * @param bool     $i['latelyChanged']       Whether trigger status has changed recently.
+ * @param int      $i['priority']            Problem severity. Possible values:
+ *                                           TRIGGER_SEVERITY_NOT_CLASSIFIED, TRIGGER_SEVERITY_INFORMATION,
+ *                                           TRIGGER_SEVERITY_WARNING, TRIGGER_SEVERITY_AVERAGE, TRIGGER_SEVERITY_HIGH,
+ *                                           TRIGGER_SEVERITY_DISASTER.
+ * @param int      $i['expandproblem']       (optional) Map "Display problems" option. Possible values:
+ *                                           SYSMAP_SINGLE_PROBLEM, SYSMAP_PROBLEMS_NUMBER,
+ *                                           SYSMAP_PROBLEMS_NUMBER_CRITICAL.
+ * @param string   $i['problem_title']       (optional) The name of the most critical problem.
+ * @param int|null $show_unack               (optional) Map "Problem display" option. Possible values:
+ *                                           EXTACK_OPTION_ALL, EXTACK_OPTION_UNACK, EXTACK_OPTION_BOTH.
  *
  * @return array
  */
@@ -294,10 +307,11 @@ function getSelementInfo(array $i, $show_unack = null) {
 
 	$info = [
 		'latelyChanged' => $i['latelyChanged'],
-		'ack' => $i['ack'],
+		'ack' => !$i['problem_unack'],
 		'priority' => $i['priority'],
 		'info' => [],
-		'iconid' => $i['iconid_off']
+		'iconid' => $i['iconid_off'],
+		'aria_label' => ''
 	];
 
 	if ($i['elementtype'] == SYSMAP_ELEMENT_TYPE_HOST && $i['disabled']) {
@@ -377,6 +391,10 @@ function getSelementInfo(array $i, $show_unack = null) {
 			$info['icon_type'] = SYSMAP_ELEMENT_ICON_ON;
 			$has_problem = true;
 		}
+
+		$info['aria_label'] = ($i['problem'] > 1)
+			? _n('%1$s problem', '%1$s problems', $i['problem'])
+			: $i['problem_title'];
 	}
 
 	if ($i['maintenance']) {
@@ -715,10 +733,8 @@ function getSelementsInfo(array $sysmap, array $options = []) {
 			'problem' => 0,
 			'problem_unack' => 0,
 			'priority' => 0,
-			'latelyChanged' => false,
-			'ack' => true
+			'latelyChanged' => false
 		];
-		$info[$selementId]['aria_label'] = '';
 
 		/*
 		 * If user has no rights to see the details of particular selement, add only info that is needed to render map
@@ -795,23 +811,8 @@ function getSelementsInfo(array $sysmap, array $options = []) {
 
 		if ($critical_problem) {
 			$i['priority'] = $critical_problem['severity'];
-		}
-
-		$i['ack'] = !$i['problem_unack'];
-
-		// Number of problems.
-		if ($sysmap['expandproblem'] == SYSMAP_PROBLEMS_NUMBER) {
-			$i['expandproblem'] = SYSMAP_PROBLEMS_NUMBER;
-		}
-		// Expand single problem.
-		elseif ($sysmap['expandproblem'] == SYSMAP_SINGLE_PROBLEM && $i['problem']) {
 			$i['problem_title'] = $critical_problem['name'];
-			$i['expandproblem'] = SYSMAP_SINGLE_PROBLEM;
-		}
-		// Number of problems and expand most critical one.
-		elseif ($sysmap['expandproblem'] == SYSMAP_PROBLEMS_NUMBER_CRITICAL && $i['problem']) {
-			$i['problem_title'] = $critical_problem['name'];
-			$i['expandproblem'] = SYSMAP_PROBLEMS_NUMBER_CRITICAL;
+			$i['expandproblem'] = $sysmap['expandproblem'];
 		}
 
 		// replace default icons
@@ -837,12 +838,6 @@ function getSelementsInfo(array $sysmap, array $options = []) {
 			$info[$selementId]['iconid'] = getIconByMapping($iconMap,
 				$hostInventories[$selement['elements'][0]['hostid']]
 			);
-		}
-
-		if ($i['problem'] > 0) {
-			$info[$selementId]['aria_label'] = ($i['problem'] > 1)
-				? _n('%1$s problem', '%1$s problems', $i['problem'])
-				: $critical_problem['name'];
 		}
 
 		$info[$selementId]['problems_total'] = $i['problem'];
