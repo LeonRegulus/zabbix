@@ -76,6 +76,7 @@ ZBX_THREAD_ENTRY(dbsyncer_thread, args)
 		zbx_problems_export_init("history-syncer", process_num);
 	}
 
+
 	for (;;)
 	{
 		sec = zbx_time();
