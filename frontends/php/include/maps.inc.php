@@ -286,7 +286,7 @@ function addElementNames(array &$selements) {
  *                                           TRIGGER_SEVERITY_NOT_CLASSIFIED, TRIGGER_SEVERITY_INFORMATION,
  *                                           TRIGGER_SEVERITY_WARNING, TRIGGER_SEVERITY_AVERAGE, TRIGGER_SEVERITY_HIGH,
  *                                           TRIGGER_SEVERITY_DISASTER.
- * @param int      $i['expandproblem']       (optional) Map "Display problems" option. Possible values:
+ * @param int      $i['expandproblem']       Map "Display problems" option. Possible values:
  *                                           SYSMAP_SINGLE_PROBLEM, SYSMAP_PROBLEMS_NUMBER,
  *                                           SYSMAP_PROBLEMS_NUMBER_CRITICAL.
  * @param string   $i['problem_title']       (optional) The name of the most critical problem.
@@ -733,7 +733,8 @@ function getSelementsInfo(array $sysmap, array $options = []) {
 			'problem' => 0,
 			'problem_unack' => 0,
 			'priority' => 0,
-			'latelyChanged' => false
+			'latelyChanged' => false,
+			'expandproblem' => $sysmap['expandproblem']
 		];
 
 		/*
@@ -812,7 +813,6 @@ function getSelementsInfo(array $sysmap, array $options = []) {
 		if ($critical_problem) {
 			$i['priority'] = $critical_problem['severity'];
 			$i['problem_title'] = $critical_problem['name'];
-			$i['expandproblem'] = $sysmap['expandproblem'];
 		}
 
 		// replace default icons
