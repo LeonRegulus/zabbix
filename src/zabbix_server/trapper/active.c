@@ -760,8 +760,9 @@ int	send_agent_configuration(zbx_socket_t *sock, struct zbx_json_parse *jp)
 	if (0 != itemids.values_num)
 	{
 		DC_ITEM		*dc_items;
-		int		*errcodes, now, delay;
+		int		*errcodes, now, j;
 		zbx_config_t	cfg;
+		AGENT_REQUEST	request;
 
 		dc_items = (DC_ITEM *)zbx_malloc(NULL, sizeof(DC_ITEM) * itemids.values_num);
 		errcodes = (int *)zbx_malloc(NULL, sizeof(int) * itemids.values_num);
@@ -798,22 +799,37 @@ int	send_agent_configuration(zbx_socket_t *sock, struct zbx_json_parse *jp)
 			dc_items[i].key = zbx_strdup(dc_items[i].key, dc_items[i].key_orig);
 			substitute_key_macros(&dc_items[i].key, NULL, &dc_items[i], NULL, NULL, MACRO_TYPE_ITEM_KEY, NULL, 0);
 
-			zbx_json_addobject(&json, NULL);
-			zbx_json_addstring(&json, ZBX_PROTO_TAG_KEY, dc_items[i].key, ZBX_JSON_TYPE_STRING);
-			if (0 != strcmp(dc_items[i].key, dc_items[i].key_orig))
+			init_request(&request);
+			if (SUCCEED == parse_item_key(dc_items[i].key, &request))
 			{
-				zbx_json_addstring(&json, ZBX_PROTO_TAG_KEY_ORIG,
-						dc_items[i].key_orig, ZBX_JSON_TYPE_STRING);
+				zbx_json_addobject(&json, NULL);
+				zbx_json_adduint64(&json, ZBX_PROTO_TAG_ITEMID, dc_items[i].itemid);
+
+				zbx_json_addstring(&json, ZBX_PROTO_TAG_KEY, request.key, ZBX_JSON_TYPE_STRING);
+				if (0 != request.nparam)
+				{
+					zbx_json_addarray(&json, ZBX_PROTO_TAG_PARAMS);
+					for (j = 0; j < request.nparam; j++)
+						zbx_json_addstring(&json, NULL, request.params[j], ZBX_JSON_TYPE_STRING);
+					zbx_json_close(&json);
+				}
+
+				if (0 != strcmp(dc_items[i].key, dc_items[i].key_orig))
+				{
+					zbx_json_addstring(&json, ZBX_PROTO_TAG_KEY_ORIG,
+							dc_items[i].key_orig, ZBX_JSON_TYPE_STRING);
+				}
+				zbx_json_addstring(&json, ZBX_PROTO_TAG_DELAY, dc_items[i].delay, ZBX_JSON_TYPE_STRING);
+				/* The agent expects ALWAYS to have lastlogsize and mtime tags. */
+				/* Removing those would cause older agents to fail. */
+				zbx_json_adduint64(&json, ZBX_PROTO_TAG_LASTLOGSIZE, dc_items[i].lastlogsize);
+				zbx_json_adduint64(&json, ZBX_PROTO_TAG_MTIME, dc_items[i].mtime);
+				zbx_json_close(&json);
+
+				zbx_itemkey_extract_global_regexps(dc_items[i].key, &names);
+
+				free_request(&request);
 			}
-			zbx_json_addstring(&json, ZBX_PROTO_TAG_DELAY, dc_items[i].delay, ZBX_JSON_TYPE_STRING);
-			/* The agent expects ALWAYS to have lastlogsize and mtime tags. */
-			/* Removing those would cause older agents to fail. */
-			zbx_json_adduint64(&json, ZBX_PROTO_TAG_LASTLOGSIZE, dc_items[i].lastlogsize);
-			zbx_json_adduint64(&json, ZBX_PROTO_TAG_MTIME, dc_items[i].mtime);
-			zbx_json_close(&json);
-
-			zbx_itemkey_extract_global_regexps(dc_items[i].key, &names);
-
 			zbx_free(dc_items[i].key);
 		}
 
