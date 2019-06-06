@@ -1117,6 +1117,10 @@ static int	process_trap(zbx_socket_t *sock, char *s, zbx_timespec_t *ts)
 			{
 				ret = send_list_of_active_checks_json(sock, &jp);
 			}
+			else if (0 == strcmp(value, ZBX_PROTO_VALUE_AGENT_CONFIG))
+			{
+				ret = send_agent_configuration(sock, &jp);
+			}
 			else if (0 == strcmp(value, ZBX_PROTO_VALUE_COMMAND))
 			{
 				if (0 != (program_type & ZBX_PROGRAM_TYPE_SERVER))

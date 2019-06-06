@@ -242,6 +242,28 @@ static void	get_list_of_active_checks(zbx_uint64_t hostid, zbx_vector_uint64_t *
 	DBfree_result(result);
 }
 
+static void	get_list_of_agent_xt_checks(zbx_uint64_t hostid, zbx_vector_uint64_t *itemids)
+{
+	DB_RESULT	result;
+	DB_ROW		row;
+	zbx_uint64_t	itemid;
+
+	result = DBselect(
+			"select itemid"
+			" from items"
+			" where type=%d"
+				" and flags<>%d"
+				" and hostid=" ZBX_FS_UI64,
+			ITEM_TYPE_ZABBIX_XT, ZBX_FLAG_DISCOVERY_PROTOTYPE, hostid);
+
+	while (NULL != (row = DBfetch(result)))
+	{
+		ZBX_STR2UINT64(itemid, row[0]);
+		zbx_vector_uint64_append(itemids, itemid);
+	}
+	DBfree_result(result);
+}
+
 /******************************************************************************
  *                                                                            *
  * Function: send_list_of_active_checks                                       *
@@ -570,6 +592,220 @@ int	send_list_of_active_checks_json(zbx_socket_t *sock, struct zbx_json_parse *j
 						dc_items[i].key_orig, ZBX_JSON_TYPE_STRING);
 			}
 			zbx_json_adduint64(&json, ZBX_PROTO_TAG_DELAY, delay);
+			/* The agent expects ALWAYS to have lastlogsize and mtime tags. */
+			/* Removing those would cause older agents to fail. */
+			zbx_json_adduint64(&json, ZBX_PROTO_TAG_LASTLOGSIZE, dc_items[i].lastlogsize);
+			zbx_json_adduint64(&json, ZBX_PROTO_TAG_MTIME, dc_items[i].mtime);
+			zbx_json_close(&json);
+
+			zbx_itemkey_extract_global_regexps(dc_items[i].key, &names);
+
+			zbx_free(dc_items[i].key);
+		}
+
+		zbx_config_clean(&cfg);
+
+		DCconfig_clean_items(dc_items, errcodes, itemids.values_num);
+
+		zbx_free(errcodes);
+		zbx_free(dc_items);
+	}
+
+	zbx_vector_uint64_destroy(&itemids);
+
+	zbx_json_close(&json);
+
+	DCget_expressions_by_names(&regexps, (const char * const *)names.values, names.values_num);
+
+	if (0 < regexps.values_num)
+	{
+		char	buffer[32];
+
+		zbx_json_addarray(&json, ZBX_PROTO_TAG_REGEXP);
+
+		for (i = 0; i < regexps.values_num; i++)
+		{
+			zbx_expression_t	*regexp = (zbx_expression_t *)regexps.values[i];
+
+			zbx_json_addobject(&json, NULL);
+			zbx_json_addstring(&json, "name", regexp->name, ZBX_JSON_TYPE_STRING);
+			zbx_json_addstring(&json, "expression", regexp->expression, ZBX_JSON_TYPE_STRING);
+
+			zbx_snprintf(buffer, sizeof(buffer), "%d", regexp->expression_type);
+			zbx_json_addstring(&json, "expression_type", buffer, ZBX_JSON_TYPE_INT);
+
+			zbx_snprintf(buffer, sizeof(buffer), "%c", regexp->exp_delimiter);
+			zbx_json_addstring(&json, "exp_delimiter", buffer, ZBX_JSON_TYPE_STRING);
+
+			zbx_snprintf(buffer, sizeof(buffer), "%d", regexp->case_sensitive);
+			zbx_json_addstring(&json, "case_sensitive", buffer, ZBX_JSON_TYPE_INT);
+
+			zbx_json_close(&json);
+		}
+
+		zbx_json_close(&json);
+	}
+
+	zabbix_log(LOG_LEVEL_DEBUG, "%s() sending [%s]", __func__, json.buffer);
+
+	zbx_alarm_on(CONFIG_TIMEOUT);
+	if (SUCCEED != zbx_tcp_send(sock, json.buffer))
+		strscpy(error, zbx_socket_strerror());
+	else
+		ret = SUCCEED;
+	zbx_alarm_off();
+
+	zbx_json_free(&json);
+
+	goto out;
+error:
+	zabbix_log(LOG_LEVEL_WARNING, "cannot send list of active checks to \"%s\": %s", sock->peer, error);
+
+	zbx_json_init(&json, ZBX_JSON_STAT_BUF_LEN);
+	zbx_json_addstring(&json, ZBX_PROTO_TAG_RESPONSE, ZBX_PROTO_VALUE_FAILED, ZBX_JSON_TYPE_STRING);
+	zbx_json_addstring(&json, ZBX_PROTO_TAG_INFO, error, ZBX_JSON_TYPE_STRING);
+
+	zabbix_log(LOG_LEVEL_DEBUG, "%s() sending [%s]", __func__, json.buffer);
+
+	ret = zbx_tcp_send(sock, json.buffer);
+
+	zbx_json_free(&json);
+out:
+	for (i = 0; i < names.values_num; i++)
+		zbx_free(names.values[i]);
+
+	zbx_vector_str_destroy(&names);
+
+	zbx_regexp_clean_expressions(&regexps);
+	zbx_vector_ptr_destroy(&regexps);
+
+	zbx_free(host_metadata);
+
+	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s", __func__, zbx_result_string(ret));
+
+	return ret;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: send_agent_configuration                                         *
+ *                                                                            *
+ * Purpose: send Zabbix agent configuration                                   *
+ *                                                                            *
+ * Parameters: sock - open socket of server-agent connection                  *
+ *             json - request buffer                                          *
+ *                                                                            *
+ * Return value:  SUCCEED - agent configuration sent successfully             *
+ *                FAIL - an error occurred                                    *
+ *                                                                            *
+ ******************************************************************************/
+int	send_agent_configuration(zbx_socket_t *sock, struct zbx_json_parse *jp)
+{
+	char			host[HOST_HOST_LEN_MAX], tmp[MAX_STRING_LEN], ip[INTERFACE_IP_LEN_MAX],
+				error[MAX_STRING_LEN], *host_metadata = NULL;
+	struct zbx_json		json;
+	int			ret = FAIL, i;
+	zbx_uint64_t		hostid;
+	size_t			host_metadata_alloc = 0;	/* for at least NUL-termination char */
+	unsigned short		port;
+	zbx_vector_uint64_t	itemids;
+
+	zbx_vector_ptr_t	regexps;
+	zbx_vector_str_t	names;
+
+	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __func__);
+
+	zbx_vector_ptr_create(&regexps);
+	zbx_vector_str_create(&names);
+
+	if (FAIL == zbx_json_value_by_name(jp, ZBX_PROTO_TAG_HOST, host, sizeof(host)))
+	{
+		zbx_snprintf(error, MAX_STRING_LEN, "%s", zbx_json_strerror());
+		goto error;
+	}
+
+	if (FAIL == zbx_json_value_by_name_dyn(jp, ZBX_PROTO_TAG_HOST_METADATA, &host_metadata, &host_metadata_alloc))
+		host_metadata = zbx_strdup(NULL, "");
+
+	if (FAIL == zbx_json_value_by_name(jp, ZBX_PROTO_TAG_IP, ip, sizeof(ip)))
+		strscpy(ip, sock->peer);
+
+	if (FAIL == is_ip(ip))	/* check even if 'ip' came from get_ip_by_socket() - it can return not a valid IP */
+	{
+		zbx_snprintf(error, MAX_STRING_LEN, "\"%s\" is not a valid IP address", ip);
+		goto error;
+	}
+
+	if (FAIL == zbx_json_value_by_name(jp, ZBX_PROTO_TAG_PORT, tmp, sizeof(tmp)))
+	{
+		port = ZBX_DEFAULT_AGENT_PORT;
+	}
+	else if (FAIL == is_ushort(tmp, &port))
+	{
+		zbx_snprintf(error, MAX_STRING_LEN, "\"%s\" is not a valid port", tmp);
+		goto error;
+	}
+
+	if (FAIL == get_hostid_by_host(sock, host, ip, port, host_metadata, &hostid, error))
+		goto error;
+
+	zbx_vector_uint64_create(&itemids);
+
+	get_list_of_agent_xt_checks(hostid, &itemids);
+
+	zbx_json_init(&json, ZBX_JSON_STAT_BUF_LEN);
+	zbx_json_addstring(&json, ZBX_PROTO_TAG_RESPONSE, ZBX_PROTO_VALUE_SUCCESS, ZBX_JSON_TYPE_STRING);
+	zbx_json_addarray(&json, ZBX_PROTO_TAG_DATA);
+
+	if (0 != itemids.values_num)
+	{
+		DC_ITEM		*dc_items;
+		int		*errcodes, now, delay;
+		zbx_config_t	cfg;
+
+		dc_items = (DC_ITEM *)zbx_malloc(NULL, sizeof(DC_ITEM) * itemids.values_num);
+		errcodes = (int *)zbx_malloc(NULL, sizeof(int) * itemids.values_num);
+
+		DCconfig_get_items_by_itemids(dc_items, itemids.values, errcodes, itemids.values_num);
+		zbx_config_get(&cfg, ZBX_CONFIG_FLAGS_REFRESH_UNSUPPORTED);
+
+		now = time(NULL);
+
+		for (i = 0; i < itemids.values_num; i++)
+		{
+			if (SUCCEED != errcodes[i])
+			{
+				zabbix_log(LOG_LEVEL_DEBUG, "%s() Item [" ZBX_FS_UI64 "] was not found in the"
+						" server cache. Not sending now.", __func__, itemids.values[i]);
+				continue;
+			}
+
+			if (ITEM_STATUS_ACTIVE != dc_items[i].status)
+				continue;
+
+			if (HOST_STATUS_MONITORED != dc_items[i].host.status)
+				continue;
+
+			if (ITEM_STATE_NOTSUPPORTED == dc_items[i].state)
+			{
+				if (0 == cfg.refresh_unsupported)
+					continue;
+
+				if (dc_items[i].lastclock + cfg.refresh_unsupported > now)
+					continue;
+			}
+
+			dc_items[i].key = zbx_strdup(dc_items[i].key, dc_items[i].key_orig);
+			substitute_key_macros(&dc_items[i].key, NULL, &dc_items[i], NULL, NULL, MACRO_TYPE_ITEM_KEY, NULL, 0);
+
+			zbx_json_addobject(&json, NULL);
+			zbx_json_addstring(&json, ZBX_PROTO_TAG_KEY, dc_items[i].key, ZBX_JSON_TYPE_STRING);
+			if (0 != strcmp(dc_items[i].key, dc_items[i].key_orig))
+			{
+				zbx_json_addstring(&json, ZBX_PROTO_TAG_KEY_ORIG,
+						dc_items[i].key_orig, ZBX_JSON_TYPE_STRING);
+			}
+			zbx_json_addstring(&json, ZBX_PROTO_TAG_DELAY, dc_items[i].delay, ZBX_JSON_TYPE_STRING);
 			/* The agent expects ALWAYS to have lastlogsize and mtime tags. */
 			/* Removing those would cause older agents to fail. */
 			zbx_json_adduint64(&json, ZBX_PROTO_TAG_LASTLOGSIZE, dc_items[i].lastlogsize);
